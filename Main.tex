@@ -40,9 +40,16 @@
 \section{Introduction}
 \sam{Fill in}
 \begin{itemize}
-    \item \textbf{Motivation:} Explain the importance of noise generation for privacy-preserving mechanisms, particularly in Zero-Knowledge proofs.
-    \item \textbf{Overview of ZKPs:} Briefly introduce Zero-Knowledge proofs and their significance in cryptographic protocols.
-    \item \textbf{Pseudo-correlated Generators:} Define and explain pseudo-correlated generators and their role in data privacy.
+    \item \textbf{Motivation:} Machine learning is eating the world! But, privacy is a big concern.
+	    Moreover, when considering user-generated data, integrety is a big concern.
+	    Specifically, we do not want users to submit poisoned and/ or illegal data.
+	    When doing centralized ML, this is not such a big concern as the data is usually preprocessed and cleaned.
+	    When decentralizing ML, content integrety becomes a big concern.
+	    Morevoer, given that we want a proof of integrity and privacy, it becomes very hard to scale.
+	    \lev{Thanks Copilot for generating this!}
+
+    \item \textbf{Overview of ZKPs:} Used for integrity proofs
+    \item \textbf{Current techinques}: briefly mention diff privacy and SMPC but thats next section
 \end{itemize}
 
 \section{Background and Related Work}
@@ -55,6 +62,8 @@
 \end{itemize}
 
 \subsection{Differential Privacy}
+In this section, we draw heavily from a recent survey on Local Differential Privacy (LDP)~\cite{yang2023local}.
+
 There are a few different ways to formally describe differntial privacy.
 For simplicity, we will use the $(\eps, \delta)$-differential privacy definition, though our ideas can be extended to other definitions.
 
@@ -119,8 +128,7 @@ Specifically, SMPC, especially with \emph{integrity checks on the input data}, i
 Moreover, practical implementations require a lot of interaction between the parties, which can be a bottleneck in some applications \cite{zhao2019secure}.
 
 
-\section{Problem Definition}
-We draw heavily from a recent survey on Local Differential Privacy (LDP)~\cite{yang2023local}.
+\section{Proposed Solution}
 \lev{Lev}
 \begin{itemize}
     \item \textbf{Noise Generation:} Formal problem statement describing the generation of noise using pseudo-correlated generators.
