@@ -100,8 +100,23 @@ Analogously, we can think of local-differential privacy as \[
 	\calM(x) = f(x) + N.
 \]
 
+\textbf{Problem with Differential Privacy:} Non-local differential privacy requires trusting some centralized aggregator.
+For example, in federated learning, each party would have to send there updated gradients \emph{in the clear} to an aggregator.
+Recent work \lev{TODO CITE} shows that an aggregator can almost perfectly recover the users' data from the gradient delta which could yeild a large privacy violation.
+On the other hand, local differential privacy preserves users' privacy but the quality of the data degrades with an increase in the number of users.
+Specifically, imagine trying to compute the sum of a dataset with $n$ users.
+If each user adds Laplacian noise with a constant standard deviation, $\Delta$, then the sum of the data (calculated by adding together all of the noisy inputs from each user) has Laplacian noise with paramater $n \Delta$!
 
+\subsection{Cryptographic Approaches}
+The other primary privacy preserving mechanism in machine learning is multi-party computation (MPC \lev{CITE}), which is known as as secure multi-party computation (SMPC) in machine learning to disambiguate from massive parallel computation.
+We draw from a recent survey on SMPC~\cite{zhou2024secure}.
+Given that our work is focused on differential privacy, we will not formally define SMPC here.
+Rather, SMPC is a cryptographic protocol which allows multiple parties to compute a function on their private data without revealing their data to each other.
+SMPC can also be integrated with other cryptogrpahic techniques (such as cut-and-choose type proofs, \lev{CITE}) to provide additional security guarantees: such as integrity checks on the data.
 
+Unfortunately, SMPC is not a panacea.
+Specifically, SMPC, especially with \emph{integrity checks on the input data}, is very slow and cannot scale to large datasets and hard computations.
+Moreover, practical implementations require a lot of interaction between the parties, which can be a bottleneck in some applications \cite{zhao2019secure}.
 
 
 \section{Problem Definition}
