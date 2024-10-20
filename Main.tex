@@ -54,7 +54,58 @@
     \item \textbf{Related Work:} Survey of relevant literature on noise-based privacy mechanisms and ZKPs.
 \end{itemize}
 
+\subsection{Differential Privacy}
+There are a few different ways to formally describe differntial privacy.
+For simplicity, we will use the $(\eps, \delta)$-differential privacy definition, though our ideas can be extended to other definitions.
+
+Intuitively, we can think of differential privacy as being a sort of ``2-wise'' independence condition on the input data: if we replace \emph{one} of the user's piece of data with some other possible piece of data, then differential privacy gaurentees that an adversary \emph{cannot} distinguish between the two datasets up to some probabality.
+
+Though not cryptographic in nature, differential privacy offers a notion of ``plausible-deniability'' which can also be generalized to a more $k$-wise independent setting \lev{TODO: cite?}.
+
+We have two flavors of differential privacy: local and non-local (or centralized) which is classical differential privacy.
+
+
+\lev{IDK if this is the actual defn}
+\begin{definition}[$(\eps, \delta)$ Differential Privacy,~\cite{Bassily_2015}]
+	Let $\eps > 0$ and $\calX$ be the domain of the data.
+	Then, a randomized algorithm, $\calM : \calX^n \rightarrow \calM(\calX)$ which is applied to a dataset of $n$ elements satisfies $(\eps, \delta)$-differential privacy if and only if for all $\vec{x} \in \calX^n$ and $\vec{x}'$ where $\vec{x'}_i \neq \vec{x}_i$ for a specific $i$,
+	\[
+		\Pr[\calM(\vec{x}) \in S] \leq e^\eps \Pr[\calM(\vec{x}') \in S] + \delta
+	\]
+	for any possible $S \subseteq \text{Range}(\calM)$.
+\end{definition}
+
+Note that in the above, the randomized algorithm $\calM$ is applied globally.
+We can also deffine differential privacy locally:
+
+\begin{definition}[$(\eps, \delta)$-Local Differential Privacy,~\cite{Bassily_2015}]
+	Let $\eps > 0$ and $\calX$ be the domain of the data.
+	Then, a randomized algorithm, $\calM_{loc} : \calX \rightarrow \calM_{loc}(\calX)$ which is applied to the data independently satisfies $(\eps, \delta)$-local differential privacy if and only if for all pairs $x, x' \in \calX$
+	for any possible $S \subseteq \text{Range}(\calM_{loc})$, we have
+	\[
+		\Pr[\calM_{loc}(x) \in S] \leq e^\eps \Pr[\calM_{loc}(x') \in S] + \delta.
+	\]
+\end{definition}
+
+Non-local and local differential privacy are usually achieved by adding noise to a dataset.
+Though many mechanisms exist, we will outline the \emph{Laplace Mechanism} for non-local differential privacy.
+
+Let $f: \mathcal{X}^n \rightarrow \R^d$ be some query associated with the all of the user's data (e.g. learning the mean of the data).
+Then, as outlined in \cite{Bassily_2015}, for any $x$,
+\[
+	\calM(\vec{x}) = f(\vec{x}) + N
+\]
+where $N \sim Lap(0, \Delta f/ \eps)^{d}$ where $\Delta f$ is the $\ell_1$ sensitivity of $f$.
+Analogously, we can think of local-differential privacy as \[
+	\calM(x) = f(x) + N.
+\]
+
+
+
+
+
 \section{Problem Definition}
+We draw heavily from a recent survey on Local Differential Privacy (LDP)~\cite{yang2023local}.
 \lev{Lev}
 \begin{itemize}
     \item \textbf{Noise Generation:} Formal problem statement describing the generation of noise using pseudo-correlated generators.
