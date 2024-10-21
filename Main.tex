@@ -4,6 +4,7 @@
 \usepackage{cleveref}
 % \usepackage{biblatex}
 % \addbibresource{CSTheoryToolkitCMUStyle.bib}
+\usepackage{mdframed}
 
 
 
@@ -65,6 +66,19 @@
     In the context of data privacy, PCGs provide an efficient and secure way to introduce randomness needed for privacy-preserving operations without extensive communication overhead. 
     By allowing local expansion of correlated randomness, PCGs ensure that privacy guarantees, such as differential privacy, can be achieved efficiently even in complex protocols like MPC. 
     For example, in privacy-preserving machine learning or data analysis, PCGs can be used to generate the required randomness for adding noise to datasets, ensuring that individual data points are protected while enabling useful statistical analysis.
+\sam{Fill in}
+\begin{itemize}
+    \item \textbf{Motivation:} Machine learning is eating the world! But, privacy is a big concern.
+	    Moreover, when considering user-generated data, integrety is a big concern.
+	    Specifically, we do not want users to submit poisoned and/ or illegal data.
+	    When doing centralized ML, this is not such a big concern as the data is usually preprocessed and cleaned.
+	    When decentralizing ML, content integrety becomes a big concern.
+	    Morevoer, given that we want a proof of integrity and privacy, it becomes very hard to scale.
+	    \lev{Thanks Copilot for generating this!}
+
+    \item \textbf{Overview of ZKPs:} Used for integrity proofs
+    \item \textbf{Current techinques}: briefly mention diff privacy and SMPC but thats next section
+\end{itemize}
 
 \section{Background and Related Work}
 
@@ -82,47 +96,114 @@ Each of these canonical works highlights how noise is not only a tool for privac
     \item \textbf{Related Work:} Survey of relevant literature on noise-based privacy mechanisms and ZKPs.
 \end{itemize}
 
-\section{Problem Definition}
-\lev{Lev}
-\begin{itemize}
-    \item \textbf{Noise Generation:} Formal problem statement describing the generation of noise using pseudo-correlated generators.
-    \item \textbf{Objective:} The goal is to verify that the generated noise satisfies the desired properties while maintaining privacy and correctness in Zero-Knowledge proofs.
-\end{itemize}
+\subsection{Differential Privacy}
+In this section, we draw heavily from a recent survey on Local Differential Privacy (LDP)~\cite{yang2023local}.
 
-\section{Methodology}
-\lev{Lev}
-\begin{itemize}
-    \item \textbf{Pseudo-Correlated Generators:} Detailed description of the algorithm for generating noise.
-    \item \textbf{Zero-Knowledge Protocol:} Explain how Zero-Knowledge proofs are used to verify the correctness of the noise.
-    \item \textbf{Verification Scheme:} Present the mathematical framework for verifying the pseudo-correlated noise without revealing the underlying data.
-    \item \textbf{Security Assumptions:} Discuss any assumptions required for the security of the proposed system.
-\end{itemize}
+There are a few different ways to formally describe differntial privacy.
+For simplicity, we will use the $(\eps, \delta)$-differential privacy definition, though our ideas can be extended to other definitions.
 
-\section{Implementation}
-\lev{Lev}
-\begin{itemize}
-    \item \textbf{Experimental Setup:} Describe how to simulate the generation of pseudo-correlated noise and the Zero-Knowledge verification protocol.
-    \item \textbf{Tools:} Mention the libraries, languages (e.g., Python, C++), or frameworks used.
-    \item \textbf{Complexity Analysis:} Analyze the time complexity and efficiency of the noise generation and verification process.
-\end{itemize}
+Intuitively, we can think of differential privacy as being a sort of ``2-wise'' independence condition on the input data: if we replace \emph{one} of the user's piece of data with some other possible piece of data, then differential privacy gaurentees that an adversary \emph{cannot} distinguish between the two datasets up to some probabality.
 
-\section{Results}
-\lev{Lev}
-\begin{itemize}
-    \item \textbf{Verification of Noise:} Present the results of verifying the pseudo-correlated noise in the Zero-Knowledge framework.
-    \item \textbf{Performance:} Compare the performance of the proposed method with existing noise-based mechanisms.
-    \item \textbf{Security:} Evaluate the security guarantees provided by the proposed system.
-\end{itemize}
+Though not cryptographic in nature, differential privacy offers a notion of ``plausible-deniability'' which can also be generalized to a more $k$-wise independent setting \lev{TODO: cite?}.
 
-\section{Conclusion and Future Work}
-\lev{Lev}
-\begin{itemize}
-    \item Summarize the findings and contributions of the project.
-    \item Suggest potential improvements or extensions to the current system.
-\end{itemize}
+We have two flavors of differential privacy: local and non-local (or centralized) which is classical differential privacy.
+
+
+\lev{IDK if this is the actual defn}
+\begin{definition}[$(\eps, \delta)$ Differential Privacy,~\cite{Bassily_2015}]
+	Let $\eps > 0$ and $\calX$ be the domain of the data.
+	Then, a randomized algorithm, $\calM : \calX^n \rightarrow \calM(\calX)$ which is applied to a dataset of $n$ elements satisfies $(\eps, \delta)$-differential privacy if and only if for all $\vec{x} \in \calX^n$ and $\vec{x}'$ where $\vec{x'}_i \neq \vec{x}_i$ for a specific $i$,
+	\[
+		\Pr[\calM(\vec{x}) \in S] \leq e^\eps \Pr[\calM(\vec{x}') \in S] + \delta
+	\]
+	for any possible $S \subseteq \text{Range}(\calM)$.
+\end{definition}
+
+Note that in the above, the randomized algorithm $\calM$ is applied globally.
+We can also deffine differential privacy locally:
+
+\begin{definition}[$(\eps, \delta)$-Local Differential Privacy,~\cite{Bassily_2015}]
+	Let $\eps > 0$ and $\calX$ be the domain of the data.
+	Then, a randomized algorithm, $\calM_{loc} : \calX \rightarrow \calM_{loc}(\calX)$ which is applied to the data independently satisfies $(\eps, \delta)$-local differential privacy if and only if for all pairs $x, x' \in \calX$
+	for any possible $S \subseteq \text{Range}(\calM_{loc})$, we have
+	\[
+		\Pr[\calM_{loc}(x) \in S] \leq e^\eps \Pr[\calM_{loc}(x') \in S] + \delta.
+	\]
+\end{definition}
+
+Non-local and local differential privacy are usually achieved by adding noise to a dataset.
+Though many mechanisms exist, we will outline the \emph{Laplace Mechanism} for non-local differential privacy.
+
+Let $f: \mathcal{X}^n \rightarrow \R^d$ be some query associated with the all of the user's data (e.g. learning the mean of the data).
+Then, as outlined in \cite{Bassily_2015}, for any $x$,
+\[
+	\calM(\vec{x}) = f(\vec{x}) + N
+\]
+where $N \sim Lap(0, \Delta f/ \eps)^{d}$ where $\Delta f$ is the $\ell_1$ sensitivity of $f$.
+Analogously, we can think of local-differential privacy as \[
+	\calM(x) = f(x) + N.
+\]
+
+\textbf{Problem with Differential Privacy:} Non-local differential privacy requires trusting some centralized aggregator.
+For example, in federated learning, each party would have to send there updated gradients \emph{in the clear} to an aggregator.
+Recent work \lev{TODO CITE} shows that an aggregator can almost perfectly recover the users' data from the gradient delta which could yeild a large privacy violation.
+On the other hand, local differential privacy preserves users' privacy but the quality of the data degrades with an increase in the number of users.
+Specifically, imagine trying to compute the sum of a dataset with $n$ users.
+If each user adds Laplacian noise with a constant standard deviation, $\Delta$, then the sum of the data (calculated by adding together all of the noisy inputs from each user) has Laplacian noise with paramater $n \Delta$!
+
+\subsection{Cryptographic Approaches}
+The other primary privacy preserving mechanism in machine learning is multi-party computation (MPC \lev{CITE}), which is known as as secure multi-party computation (SMPC) in machine learning to disambiguate from massive parallel computation.
+We draw from a recent survey on SMPC~\cite{zhou2024secure}.
+Given that our work is focused on differential privacy, we will not formally define SMPC here.
+Rather, SMPC is a cryptographic protocol which allows multiple parties to compute a function on their private data without revealing their data to each other.
+SMPC can also be integrated with other cryptogrpahic techniques (such as cut-and-choose type proofs, \lev{CITE}) to provide additional security guarantees: such as integrity checks on the data.
+
+Unfortunately, SMPC is not a panacea.
+Specifically, SMPC, especially with \emph{integrity checks on the input data}, is very slow and cannot scale to large datasets and hard computations.
+Moreover, practical implementations require a lot of interaction between the parties, which can be a bottleneck in some applications \cite{zhao2019secure}.
+
+\subsection{Combining MPC, LWE, and Differential Privacy}
+Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure} introduced the idea of combining Learning with Error (LWE) with differential privacy for aggregation.
+\footnote{Not too brag, but we discovered this idea independently prior to finding the referenced paper}
+The key idea is to use an LWE sample for each party $i$, $b_i = A \cdot s_i + e_i$ where $s_i$ is secret and $e_i$ is private noise, to mask each users' data.
+Then, using MPC or a similar protocol, the users can publish $s_{\sum} = \sum s_i$ which can then be used to compute an approximation of the aggregated one-time pads via $A \cdot s_{\sum} \approx \sum b_i = \sum A \cdot s_i + \sum e_i$.
+
+While this is a very promising idea, it has a few (correctable!) drawbacks.
+1) The setup process to generate $s_{\sum}$ must be repeated each time the party's release data.
+2) This setup process can be expensive and expensive to verify (i.e. use verifable variants of MPC in the setup).
+
+
+\section{Proposed Solution}
+We will specifically focus on improving privacy and integrity in decentralized machine learning where data is additively used as in Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}.
+Instead of using LWE samples as one-time pads though, we will use homomorphic pseudo-random functions (HPRFs) \lev{TODO cite} which can in turn be consturcted from LWE.
+\footnote{Specifically we require \emph{weak} HPRFs so that the keys are leakage resilient}
+The key advantage is that we only need to do a verifiable setup process \emph{once} for each party and then the party can release data essentially an unlimited number of times (up to a polynomial/ sub-exponential number of times depending on assumptions).
+
+\textbf{Adding in Verifiability:} Because each pary's evaluation of the HPRF is relatively inexpensive and simple (via a matrix multiply and rounding), we can use ZK-SNARKs to verify that the party's published data is correctly masked relative to the HPRF, that the underlying data is within a certain range (too ensure that the data is not poisoned), and that the noise is not too large (also preventing poisoning).
+Indeed adding verifiability gives a sort of ``traitor-tracing'' mechanism to the system for $N - 1$ parties while assuming that we have $N /2$ honest parties.
+Though not within scope, given the uniformity of each proof, a proof aggregator could also be used to enhance practicality.
+For simplicity, we will use RISC-0 as our ZK-SNARK of choice \lev{TODO cite}.
+We sketch the protocol in \cref{fig:prot}.
+
+\begin{mdframed}
+	Setup (preferably ran within verifiable MPC, though not in scope) \begin{itemize}
+		\item Each party $i$ generates a secret key $s_i$
+		\item Using MPC, the parties compute $\sum s_i = s_{\sum}$
+		\item Each party releases $H(s_i)$ where $H$ is a hash function
+	\end{itemize}
+	Aggregation for time step $t$ \begin{itemize}
+		\item Each party $i$ calls $b_i = HPRF(s_i, t)$ 
+		\item Each party generates noise $\eta_i$ with standard deviation $O(1/n)$ and publishes data $ct_i = v_i + b_i + \eta_i$ as well as a proof that $b_i$ is generated with key $s_i$ relative to $H(s_i)$ and that $b_i = HPRF(s_i, t)$ and that $v_i + \eta_i$ are within some bounds
+		\item To decode the data, a third party checks all the proofs and does $\sum_i ct_i - HPRF(s_{\sum}, t) = \sum_i v_i + \sum \eta_i$
+	\end{itemize}
+	% \caption{Outline of the Final Protocol}
+	\label{fig:prot}
+\end{mdframed}
 
 \bibliographystyle{alpha}
 \bibliography{bib/ref}
 
 \end{document}
+
+
 
