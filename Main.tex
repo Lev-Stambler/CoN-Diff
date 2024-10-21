@@ -52,6 +52,7 @@ For example, a model trying to calculate the average height of a group of people
 
 \subsection{Current Techniques}
 We can break down privacy-preserving machine learning into two main categories: cryptographic and non-cryptographic which usually refers to Multi-Party Compute (or Homomorphic Encryption) and Differential Privacy, respectively.
+\footnote{For the sake of brevity, we will not be discussing Homomorphic Encryption HE) in this outline, but \emph{verifiable} HE it is not quite practical.}
 
 \subsubsection*{Differential Privacy}
 For a more in-depth look into differential privacy, we recommend reading a recent survey on Local Differential Privacy (LDP)~\cite{yang2023local}.
@@ -93,7 +94,6 @@ We can also deffine differential privacy locally:
 
 Non-local and local differential privacy are usually achieved by adding noise to a dataset.
 Though many mechanisms exist, we will outline the \emph{Laplace Mechanism} for non-local differential privacy.
-
 Let $f: \mathcal{X}^n \rightarrow \R^d$ be some query associated with the all of the user's data (e.g. learning the mean of the data).
 Then, as outlined in \cite{Bassily_2015}, for any $x$,
 \[
@@ -124,7 +124,7 @@ Moreover, practical implementations require a lot of interaction between the par
 
 \subsubsection*{Combining MPC, LWE, and Differential Privacy}
 Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure} introduced the idea of combining Learning with Error (LWE) with differential privacy for aggregation.
-\footnote{Not too brag, but we discovered this idea independently prior to finding the referenced paper}
+\footnote{we discovered this idea independently prior to finding the referenced paper}
 The key idea is to use an LWE sample for each party $i$, $b_i = A \cdot s_i + e_i$ where $s_i$ is secret and $e_i$ is private noise, to mask each users' data.
 Then, using MPC or a similar protocol, the users can publish $s_{\sum} = \sum s_i$ which can then be used to compute an approximation of the aggregated one-time pads via $A \cdot s_{\sum} \approx \sum b_i = \sum A \cdot s_i + \sum e_i$.
 
@@ -141,14 +141,14 @@ ZK-SNARKs (Zero-Knowledge Succinct Non-Interactive Argument of Knowledge) are a 
 We will use RISC-0 to produce our ZKPs though other ZKPs could be used as well.
 \footnote{\href{https://risczero.com/}{RISC-0 Homepage}}
 
-\emph{homomorphic pseudo-random functions}, (HPRFs), introduced in Ref.~\cite{boneh2013key} are pseudo-random functions which are homomorphicover their keys under the addition operation.
+\emph{Homomorphic pseudo-random functions}, (HPRFs), introduced in Ref.~\cite{boneh2013key} are pseudo-random functions which are homomorphicover their keys under the addition operation.
 Specifically, for keys $k_1, k_2$ and $x$, we have $F(k_1, x) + F(k_2, x) = F(k_1 + k_2, x)$ where $F$ is the HPRF.
 Generally, HPRFs are constructed from Learning with Rounding (LWR) which is a variant of LWE and have been made more efficient in Refs.~\cite{newKeyHom, kim2020key}.
 
 
 \subsubsection*{Proposed Solution}
 We will specifically focus on improving privacy and integrity in decentralized machine learning where data is additively used as in Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}.
-Instead of using LWE samples as one-time pads though, we will use homomorphic pseudo-random functions (HPRFs) \lev{TODO cite} which can in turn be constructed from LWE/ LWR.
+Instead of using LWE samples as one-time pads though, we will use the output of HPRFs which can in turn be constructed from LWE/ LWR.
 \footnote{Specifically we require \emph{weak} HPRFs so that the keys are leakage resilient}
 The key advantage is that we only need to do a verifiable setup process \emph{once} for each party and then the party can release data essentially an unlimited number of times (up to a polynomial/ sub-exponential number of times depending on assumptions).
 
@@ -161,15 +161,15 @@ We sketch the protocol in \cref{fig:prot}.
 
 \begin{figure}
 	\begin{mdframed}
-		Setup (preferably ran within verifiable MPC, though not in scope) \begin{itemize}
+		Setup: \begin{itemize}
 			\item Each party $i$ generates a secret key $s_i$
 			\item Using MPC, the parties compute $\sum s_i = s_{\sum}$
 			\item Each party releases $Comm(s_i)$ where $Comm$ is a randomized commitment function
 		\end{itemize}
-		Aggregation for time step $t$ \begin{itemize}
+		Aggregation for time step $t$: \begin{itemize}
 			\item Each party $i$ calls $b_i = F(s_i, t)$  where $F$ is the HPRF
-			\item Each party generates noise $\eta_i$ with standard deviation $O(1/n)$ and publishes data $ct_i = v_i + b_i + \eta_i$ as well as a proof that (1) $b_i$ is generated with key $s_i$ relative to $Comm(s_i)$ (2) $b_i = HPRF(s_i, t)$ and (3) $v_i + \eta_i$ are within some bounds specified by the protocol
-			\item To decode the data, a third party checks all the proofs and does $\sum_i ct_i - HPRF(s_{\sum}, t) = \sum_i v_i + \sum \eta_i$
+			\item Each party generates noise $\eta_i$ with standard deviation $O(1/n)$ and publishes data $ct_i = v_i + b_i + \eta_i$ as well as a proof that (1) $b_i$ is generated with key $s_i$ relative to $Comm(s_i)$ (2) $b_i = F(s_i, t)$ and (3) $v_i + \eta_i$ are within some bounds specified by the protocol
+			\item To decode the data, a third party checks all the proofs and does $\sum_i ct_i - F(s_{\sum}, t) = \sum_i v_i + \sum \eta_i$
 		\end{itemize}
 	\end{mdframed}
 	\caption{Outline of the Final Protocol}
