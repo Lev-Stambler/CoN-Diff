@@ -38,14 +38,42 @@
 %\end{abstract}
 
 \section{Introduction}
-\sam{Fill in}
-\begin{itemize}
-    \item \textbf{Motivation:} Explain the importance of noise generation for privacy-preserving mechanisms, particularly in Zero-Knowledge proofs.
-    \item \textbf{Overview of ZKPs:} Briefly introduce Zero-Knowledge proofs and their significance in cryptographic protocols.
-    \item \textbf{Pseudo-correlated Generators:} Define and explain pseudo-correlated generators and their role in data privacy.
-\end{itemize}
+    \emph{Zero-knowledge proofs} (ZKPs) are cryptographic protocols that allow one party, called the prover, to demonstrate the validity of a statement to another party, the verifier, without revealing any additional information beyond the fact that the statement is true. 
+    Introduced by Goldwasser, Micali, and Rackoff in the 1980s, ZKPs rely on complex mathematical principles to achieve this privacy-preserving verification. 
+    ZKPs are particularly useful in applications where privacy is paramount, such as identity verification, blockchain transactions, and secure voting protocols.
+
+    In cryptographic protocols, ZKPs are significant because they allow secure authentication and verification without compromising the confidentiality of sensitive information. 
+    For example, in blockchain systems, ZKPs can verify transactions without revealing transaction details, ensuring both security and privacy in decentralized environments. 
+    Additionally, ZKPs can be used in privacy-preserving computation, where multiple parties can collaboratively compute a function over their inputs without revealing those inputs to each other.
+    This makes ZKPs a powerful tool in enhancing privacy and security across various cryptographic applications, from secure messaging to confidential financial transactions.
+    
+    Noise generation is crucial for privacy-preserving mechanisms like \emph{differential privacy} (DP) because it masks the contribution of individual data points in statistical analysis, ensuring that sensitive information is protected~\cite{dwork2006differential}. 
+    By adding random noise from distributions such as Laplace or Gaussian, DP limits the ability of an adversary to infer specific data, even when multiple queries are made. 
+    This balance between privacy and accuracy is often carefully calibrated with more noise enhancing privacy but reducing the utility of the results . 
+    In certain advanced scenarios, correlated noise, where noise is not independent but follows specific patterns, can improve privacy and utility, though verifying its correct implementation becomes more challenging .
+
+    In ZKPs, noise generation plays a complementary role by ensuring that sensitive data remains hidden while still allowing verification of computations.
+    ZKPs allow a prover to demonstrate that noise has been correctly added according to privacy standards, without revealing the noise values or underlying data, preserving confidentiality. 
+    This is particularly important in complex systems like federated learning (FL) or secure multi-party computation (MPC), where verification of proper noise addition across multiple parties is required for privacy guarantees. 
+    In such systems, noise acts as both a tool for obfuscation and a means to provide proof validation, ensuring that privacy is upheld throughout the computation.
+    
+    \emph{Pseudo-correlated generators} (PCGs) are cryptographic tools designed to generate large amounts of correlated randomness from short, shared seeds between parties. 
+    They are particularly useful in scenarios like secure multi-party computation (MPC), where secure, random correlations (such as oblivious transfer or vector oblivious linear evaluation) can reduce communication costs and improve computational efficiency. 
+    Instead of having to continuously exchange randomness or communicate for every correlation instance, parties can precompute short, shared seeds and then expand these seeds locally into long pseudorandom strings, which emulate the desired correlated randomness. 
+    This allows for efficient preprocessing phases in cryptographic protocols, which is crucial for scalability.
+
+    In the context of data privacy, PCGs provide an efficient and secure way to introduce randomness needed for privacy-preserving operations without extensive communication overhead. 
+    By allowing local expansion of correlated randomness, PCGs ensure that privacy guarantees, such as differential privacy, can be achieved efficiently even in complex protocols like MPC. 
+    For example, in privacy-preserving machine learning or data analysis, PCGs can be used to generate the required randomness for adding noise to datasets, ensuring that individual data points are protected while enabling useful statistical analysis.
 
 \section{Background and Related Work}
+
+Noise is a fundamental component in many cryptographic primitives, serving to enhance security and privacy by obfuscating sensitive data. 
+In \emph{homomorphic encryption}~\cite{gentry2009fully}, noise is introduced during encryption to allow computations on ciphertexts without revealing the underlying plaintext. 
+While noise grows with each operation, it must be carefully managed to prevent decryption failure. 
+In DP, noise is added to statistical outputs to obscure individual contributions to a dataset, ensuring privacy even in the presence of multiple queries~\cite{dwork2006differential}. 
+Similarly, in \emph{Learning with Errors} (LWE)~\cite{regev2009lattices}, noise is central to the hardness assumption, where the challenge is to solve linear equations obscured by random noise, which provides post-quantum security.
+Each of these canonical works highlights how noise is not only a tool for privacy but also for achieving computational security in cryptographic systems.
 \sam{Fill in}
 \begin{itemize}
     \item \textbf{Noise in Cryptography:} Overview of how noise is used in cryptographic primitives (e.g., homomorphic encryption, differential privacy).
