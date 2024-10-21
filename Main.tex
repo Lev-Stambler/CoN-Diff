@@ -28,9 +28,9 @@
 
 \title{CoN Diff: Verified Pseudo-Correlated Noise for Differential Privacy}
 
-% \author{\myname}
+\author{\myname\ and Shi Jie Samuel Tan}
 
-\date{\today}
+\date{}
 \maketitle
 
 \input{sections/commands}
@@ -42,46 +42,39 @@
     ``Software is eating the world, but AI is going to eat software'' is a well-known quote by Jensen Huang, CEO of NVIDIA.
     Still, AI is notoriously data-hungry and privacy is a big concern.
     When considering private data---such as financial, medical, and political data---privacy is paramount.
-    Unfortunately, privacy is often at odds with the utility of the data and the robustness to adversarial input of the AI model.
-    In this work, we propose a novel approach to privacy-preserving machine learning, primarily building off of combining Differential Privacy DP) and Learning with Errors (LWE) as seen in Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}.
-    We add zero-knowledge proofs (ZKPs) to ensure that inputted data is not poisoned with traitor-tracing capabilities.
-    \footnote{Poisoned data is data that is intentionally manipulated to degrade the performance of the model.
-For example, a model trying to calculate the average height of a group of people could be poisoned by inputting a height of 1000 feet.}
-    
+    Unfortunately, privacy is often at odds with data utility and the AI model's robustness against adversarial inputs.
+    In this work, we propose a novel approach to privacy-preserving machine learning that primarily combines Differential Privacy (DP) and Learning with Errors (LWE) as seen in Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}.
+    In addition, we add zero-knowledge proofs (ZKPs) to ensure that inputted data is not poisoned with traitor-tracing capabilities.
+    ~\footnote{Poisoned data is data that is intentionally manipulated to degrade the performance of the model.
+    For example, a model trying to calculate the average height of a group of people could be poisoned by inputting a height of 1000 feet.}
     Moreover, we use new cryptographic tools to allow for \emph{efficient and verifiable} repeated data releases without a repeated setup process.
 
 \subsection{Current Techniques}
-We can break down privacy-preserving machine learning into two main categories: cryptographic and non-cryptographic which usually refers to Multi-Party Compute (or Homomorphic Encryption) and Differential Privacy, respectively.
-\footnote{For the sake of brevity, we will not be discussing Homomorphic Encryption HE) in this outline, but \emph{verifiable} HE it is not quite practical.}
+We can break down privacy-preserving machine learning into two main categories: non-cryptographic (e.g. DP) and cryptographic (e.g. Multi-Party Computation (MPC)).
+% \footnote{For the sake of brevity, we will not be discussing Homomorphic Encryption HE) in this outline, but \emph{verifiable} HE it is not quite practical.}
 
-\subsubsection*{Differential Privacy}
-For a more in-depth look into differential privacy, we recommend reading a recent survey on Local Differential Privacy (LDP)~\cite{yang2023local}.
-
+\paragraph{Differential Privacy.}
 DP uses noise to mask the contribution of individual data points in statistical analysis, ensuring that sensitive information is protected~\cite{dwork2006differential}. 
-By adding random noise from distributions such as Laplace or Gaussian, DP limits the ability of an adversary to infer specific data, even when multiple queries are made. 
-This balance between privacy and accuracy is often carefully calibrated with more noise enhancing privacy but reducing the utility of the results. 
-In certain advanced scenarios, correlated noise, where noise is not independent but follows specific patterns, can improve privacy and utility, though verifying its correct implementation becomes more challenging.
-\lev{shorten?}
-
-There are a few different ways to formally describe differential privacy.
-For simplicity, we will use the $(\eps, \delta)$-differential privacy definition, though our ideas can be extended to other definitions.
-We have two flavors of differential privacy: local and non-local (or centralized) which is classical differential privacy.
+By adding random noise from distributions such as Laplace or Gaussian, DP limits the ability of an adversary to infer specific data, even when multiple queries are made, at the expense of the utility of results. 
+In certain scenarios, correlated noise, where noise is not independent across data contributors, can improve privacy and utility, though verifying its correct implementation becomes more challenging.
+For a more in-depth look into DP, we recommend a survey on Local Differential Privacy (LDP)~\cite{yang2023local}.
+In our work, we use the $(\eps, \delta)$-differential privacy definition, though our ideas can be extended to other definitions.
+We have two flavors of DP where noise is either applied locally or non-locally.
 %Intuitively, we can think of differential privacy as being a sort of ``2-wise'' independence condition on the input data: if we replace \emph{one} of the user's piece of data with some other possible piece of data, then differential privacy gaurentees that an adversary \emph{cannot} distinguish between the two datasets up to some probabality.
 %Though not cryptographic in nature, differential privacy offers a notion of ``plausible-deniability'' which can also be generalized to a more $k$-wise independent setting \lev{TODO: cite?}.
 
 
 %\lev{IDK if this is the actual defn}
-\begin{definition}[$(\eps, \delta)$ Differential Privacy,~\cite{Bassily_2015}]
-	Let $\eps > 0$ and $\calX$ be the domain of the data.
-	Then, a randomized algorithm, $\calM : \calX^n \rightarrow \calM(\calX)$ which is applied to a dataset of $n$ elements satisfies $(\eps, \delta)$-differential privacy if and only if for all $\vec{x} \in \calX^n$ and $\vec{x}'$ where $\vec{x'}_i \neq \vec{x}_i$ for a specific $i$,
+\begin{definition}[$(\eps, \delta)$-Differential Privacy,~\cite{Bassily_2015}]
+	Let $\eps > 0$ and $\calX$ be the data element domain.
+	Then, a randomized algorithm, $\calM : \calX^n \rightarrow \calM\left(\calX^n\right)$ that is applied to an $n$-element dataset satisfies $(\eps, \delta)$-differential privacy if and only if for all $\vec{x},\vec{x}' \in \calX^n$ where $\vec{x}'_i \neq \vec{x}_i$ for some $i$ and any $S \subseteq \text{Range}(\calM)$,
 	\[
-		\Pr[\calM(\vec{x}) \in S] \leq e^\eps \Pr[\calM(\vec{x}') \in S] + \delta
+		\Pr[\calM(\vec{x}) \in S] \leq e^\eps \Pr[\calM(\vec{x}') \in S] + \delta.
 	\]
-	for any possible $S \subseteq \text{Range}(\calM)$.
 \end{definition}
 
-Note that in the above, the randomized algorithm $\calM$ is applied globally.
-We can also deffine differential privacy locally:
+% Note that in the above, the randomized algorithm $\calM$ is applied globally.
+% We can also deffine differential privacy locally:
 
 \begin{definition}[$(\eps, \delta)$-Local Differential Privacy,~\cite{Bassily_2015}]
 	Let $\eps > 0$ and $\calX$ be the domain of the data.
@@ -92,35 +85,30 @@ We can also deffine differential privacy locally:
 	\]
 \end{definition}
 
-Non-local and local differential privacy are usually achieved by adding noise to a dataset.
-Though many mechanisms exist, we will outline the \emph{Laplace Mechanism} for non-local differential privacy.
-Let $f: \mathcal{X}^n \rightarrow \R^d$ be some query associated with the all of the user's data (e.g. learning the mean of the data).
-Then, as outlined in \cite{Bassily_2015}, for any $x$,
+Non-local and local DP are usually achieved by adding noise to a dataset.
+Though many mechanisms exist, we outline the \emph{Laplace Mechanism} for non-local DP.
+Let $f: \mathcal{X}^n \rightarrow \R^d$ be some query associated with the entire $n$-element dataset (e.g. learning the mean of the data).
+Then, for any $\vec{x} \in \calX^n$ as outlined in \cite{Bassily_2015} where $N \sim Lap(0, \Delta f/ \eps)^{d}$ where $\Delta f$ is the $\ell_1$ sensitivity of $f$
 \[
-	\calM(\vec{x}) = f(\vec{x}) + N
+	\calM(\vec{x}) = f(\vec{x}) + N.
 \]
-where $N \sim Lap(0, \Delta f/ \eps)^{d}$ where $\Delta f$ is the $\ell_1$ sensitivity of $f$.
-Analogously, we can think of local-differential privacy as \[
-	\calM(x) = f(x) + N.
-\]
+Analogously, we can think of local-differential privacy as the above but we replace $\vec{x}$ with $x$.
 
-\textbf{Problem with Differential Privacy:} Non-local differential privacy requires trusting some centralized aggregator.
-For example, in federated learning, each party would have to send there updated gradients \emph{in the clear} to an aggregator.
-Recent work \cite{gupta2022recoveringprivatetextfederated} shows that an aggregator can almost perfectly recover the users' data from the gradient delta which could yeild a large privacy violation.
-On the other hand, local differential privacy preserves users' privacy but the quality of the data degrades with an increase in the number of users.
+\paragraph{Problem with Differential Privacy:} Non-local DP requires trusting some centralized aggregator.
+For example, in federated learning, each party would have to send their updated gradients \emph{in the clear} to an aggregator.
+Recent work shows that an aggregator can almost perfectly recover the users' data from the gradient delta which yields a large privacy violation~\cite{gupta2022recoveringprivatetextfederated}.
+On the other hand, local DP preserves users' privacy but data degradation worsens with the number of users.
 Specifically, imagine trying to compute the sum of a dataset with $n$ users.
-If each user adds Laplacian noise with a constant standard deviation, $\Delta$, then the sum of the data (calculated by adding together all of the noisy inputs from each user) has Laplacian noise with paramater $n \Delta$!
+If each user adds Laplacian noise with a constant standard deviation, $\Delta$, then the sum of the data (calculated by adding all of the noisy inputs from each user) has Laplacian noise with paramater $n \Delta$!
 
-\subsubsection*{Cryptographic Approaches}
-The other primary privacy preserving mechanism in machine learning is multi-party computation (MPC) \cite{yao1986generate}, which is known as as secure multi-party computation (SMPC) in machine learning to disambiguate from massive parallel computation.
+\paragraph{Multi-Party Computation.}
+Secure multi-party computation (SMPC)~\cite{yao1986generate} is the other primary privacy preserving mechanism in ML.
 We draw from a recent survey on SMPC~\cite{zhou2024secure}.
-Given that our work is focused on differential privacy, we will not formally define SMPC here.
-Rather, SMPC is a cryptographic protocol which allows multiple parties to compute a function on their private data without revealing their data to each other.
-SMPC can also be integrated with other cryptogrpahic techniques (such as cut-and-choose type proofs, \cite{lindell2016fast}) to provide additional security guarantees: such as integrity checks on the data.
-
+SMPC is a cryptographic protocol which allows multiple parties to compute a function on their private data without revealing their data to each other.
+It can also be integrated with other techniques like cut-and-choose type proofs~\cite{lindell2016fast} to provide additional security guarantees like data integrity checks.
 Unfortunately, SMPC is not a panacea.
-Specifically, SMPC, especially with \emph{integrity checks on the input data}, is very slow and cannot scale to large datasets and hard computations.
-Moreover, practical implementations require a lot of interaction between the parties, which can be a bottleneck in some applications \cite{zhao2019secure}.
+Specifically, it is very slow with input data integrity checks and cannot scale to large datasets and computations.
+Moreover, practical implementations require many multi-party interactions~\cite{zhao2019secure}.
 
 \subsubsection*{Combining MPC, LWE, and Differential Privacy}
 Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure} introduced the idea of combining Learning with Error (LWE) with differential privacy for aggregation.
@@ -159,7 +147,7 @@ As a nice benefit, adding verifiability gives a sort of ``traitor-tracing'' mech
 %Though not within scope, given the uniformity of each proof, a proof aggregator could also be used to enhance practicality.
 We sketch the protocol in \cref{fig:prot}.
 
-\begin{figure}
+\begin{figure}[H]
 	\begin{mdframed}
 		Setup: \begin{itemize}
 			\item Each party $i$ generates a secret key $s_i$
