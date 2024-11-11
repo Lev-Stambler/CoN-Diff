@@ -34,7 +34,6 @@
 \maketitle
 
 \input{sections/commands}
-
 %\begin{abstract}
 %\end{abstract}
 
@@ -49,11 +48,126 @@
     For example, a model trying to calculate the average height of a group of people could be poisoned by inputting a height of 1000 feet.}
     Moreover, we use new cryptographic tools to allow for \emph{efficient and verifiable} repeated data releases without a repeated setup process.
 
+
+\section{Preliminaries}
+
+\subsection{Zero-Knowledge Proofs}
+\emph{Zero-knowledge proofs} (ZKPs) are cryptographic protocols that allow one party, called the prover, to demonstrate the validity of a statement to another party, the verifier, without revealing any additional information beyond the fact that the statement is true~\cite{goldwasser2019knowledge}. 
+In the original formulation by Goldwasser, \emph{et al.}, they explored interactive protocols that uses notions of computational and statistical indistinguishabilities to achieve zero-knowledge verification.
+Subsequently, the concept of non-interactive zero-knowledge proofs (NIZKs) was introduced, which allows the prover to generate a proof that can be verified by the verifier without any interaction~\cite{fiat1986prove,blum2019non}.
+These works became fundamental for digital signature schemes and cryptographic identification protocols, making zero-knowledge proofs more practical, especially in cases where communication and exchange of information are unrealistic or undesirable.
+
+
+
+\subsection{Zero-Knowledge Succinct Non-Interactive Argument of Knowledge}
+As non-interactivity becomes more important in modern cryptographic protocols, researchers have developed more efficient and scalable zero-knowledge proofs that do not require interaction between the prover and verifier.
+\emph{zk-SNARKs} (Zero-Knowledge Succinct Non-Interactive Argument of Knowledge) are a specific type of ZKP that is particularly efficient and scalable, making them suitable for a wide range of applications, from blockchain to secure messaging~\cite{ben2014succinct}.
+The theory behind zk-SNARKs was further formalized by Ben-Sasson, \emph{et al.}, who introduced the concept of a \emph{quadratic arithmetic program} (QAP) to represent computations in a succinct and verifiable manner~\cite{ben2013snarks}.
+\emph{Pinocchio} is a popular zk-SNARK construction that uses the QAP framework to generate proofs for NP statements~\cite{parno2016pinocchio}.
+Because blockchain systems require efficient and scalable verification of transactions, zk-SNARKs have become a key tool for ensuring privacy and security in decentralized environments~\cite{sasson2014zerocash,kosba2016hawk}.
+\sam{In our work, we use RISC-0 to produce our ZKPs though other ZKPs could be used as well~\footnote{\href{https://risczero.com/}{RISC-0 Homepage}}.}
+
+\subsection{Pseudo-Random Functions}
+\emph{Pseudo-random functions} (PRFs) are cryptographic primitives that mimic the behavior of random functions while being efficiently computable.
+Some of the well-known PRFs include HMAC, AES, and SHA-256, which are widely used in secure communication protocols and cryptographic applications.
+Lattice-based PRFs have also been developed to provide post-quantum security and resistance to quantum attacks~\cite{peikert2014lattice}.
+Such PRFs are based on the hardness of lattice problems, such as Learning with Errors (LWE) and Ring-LWE, which are believed to be secure against quantum adversaries~\cite{regev2009lattices, lyubashevsky2013ideal}.
+Before we state the definition of LWE, we first provide a metric of quantifying the indistinguishability of two distributions.
+
+\begin{definition}[$(t, \epsilon)$-indistinguishability]
+	Two distributions $D_0$ and $D_1$ are $(t, \epsilon)$-indistinguishable if for any circuit $C$ of size at most $t$, the following holds:
+	\[\left|\Pr[C(D_0) = 1] - \Pr[C(D_1) = 1]\right| \leq \epsilon.\]	
+\end{definition}
+
+\subsubsection{Learning with Errors}
+The LWE problem that was intoduced by Regev forms the foundation for the efficient construction of lattice-based PRFs.
+It is stated as follows:
+
+\begin{definition}[LWE Problem~\cite{regev2009lattices}]
+	A LWE problem is $(t, m, \epsilon)$-hard if the following two distributions are $(t, \epsilon)$-indistinguishable:
+	\begin{enumerate}
+		\item Sample random $\vec{s} \in \Z_q^n$ and output $m$ pairs $\left(\vec{a}_i, b_i\right) \in \Z_q^n \times \Z_p$, where $\vec{a}_i$'s are uniformly random and independent and $b_i = \left\langle \vec{a}_i, \vec{s}\right\rangle + e_i \bmod q$ for small random $e_i$.
+		\item Output $m$ uniformly random and independent pairs $\left(\vec{a}_i, b_i\right) \in \Z_q^n \times \Z_p$.
+	\end{enumerate}
+\end{definition}
+
+\subsubsection{Learning with Rounding}
+\emph{Learning with Rounding} (LWR) is a variant of LWE that can be understood as the ``derandomized'' version of the problem.
+Instead of adding noise to the inner product, we round $\left\langle \vec{a}_i, \vec{s}\right\rangle$ to the nearest element of a public subset of $p$ well-separated values in $\Z_q$, where $p$ is much smaller than $q$~\cite{bogdanov2017pseudorandom}.
+Because there are only $p$ possible rounded values, they can be labeled as elements of $\Z_p$ and denoted as $\left\lfloor\left\langle \vec{a}_i, \vec{s}\right\rangle\right\rceil_p$, where $\lfloor x \rceil_p$ equals $\lfloor (p/q)\cdot x \bmod q\rceil \bmod p$.
+The LWR problem can be stated as follows:
+\begin{definition}[LWR Problem~\cite{banerjee2012pseudorandom}]
+	A LWR problem is $(t, m, \epsilon)$-hard if the following two distributions are $(t, \epsilon)$-indistinguishable:
+	\begin{enumerate}
+		\item Sample random $\vec{s} \in \Z_q^n$ and output $m$ pairs $\left(\vec{a}_i, b_i\right) \in \Z_q^n \times \Z_p$, where $\vec{a}_i$'s are uniformly random and independent and $b_i = \left\lfloor\left\langle \vec{a}_i, \vec{s}\right\rangle\right\rceil_p$.
+		\item Output $m$ uniformly random and independent pairs $\left(\vec{a}_i, b_i\right) \in \Z_q^n \times \Z_p$.
+	\end{enumerate}
+\end{definition}
+
+A useful proposition was introduced by Banerjee, Peikert and Rosen in Ref.~\cite{banerjee2012pseudorandom} that shows that LWR is a weaker assumption than LWE.
+Let us define an LWE-error distribution to be \emph{$B$-bounded} if for all errors $e$ in the support of the distribution it holds that $e \in [-B, B]$.
+In addition, let $RD$ be the cost of rounding an element in $\Z_q$ to the nearest element in $\Z_p$.
+
+\begin{proposition}[LWE hardness Implies LWR hardness~\cite{banerjee2012pseudorandom}]\label{prop:lwe2lwr}
+	If the LWE problem is $(t, m, \epsilon)$-hard for some $B$-bounded error distribution, then the LWR problem is $(t-m\cdot RD, m, (mp(2B+1)/q)+\epsilon)$-hard.
+\end{proposition}
+
+\subsubsection{Homomorphic Pseudo-Random Functions}
+LWR is particularly useful for constructing efficient and secure cryptographic primitives, such as \emph{homomorphic pseudo-random functions} (HPRFs)~\cite{boneh2013key}.
+In this paper, we focus on HPRFs that are homomorphic over their keys under the addition operation.
+Such HPRFs are also referred to as \emph{key-homomorphic PRFs} and were originally introduced by Naor, Pinkas, and Reingold in Ref.~\cite{naor1999distributed} where these PRFs were constructed using random oracles and the Decisional Diffie-Hellman hardness assumption.
+
+\begin{definition}[Key-Homomorphic PRFs~\cite{boneh2013key}]
+	Consider an efficiently computable function $F: \calK \times \calX \to \calY$ such that $(\calK, \oplus)$ and $(\calY, \otimes)$ are both groups.
+	We say that the tuple $(F, \oplus, \otimes)$ is a \emph{key-homomorphic} PRF (KHPRF) if the following two properties hold:
+	\begin{enumerate}
+		\item $F$ is a secure pseudorandom function.
+		\item For every $k_1, k_2 \in \calK$ and every $x \in \calX$, $F\left(k_1, x\right) \otimes F\left(k_2, x\right) = F\left(k_1 \oplus k_2, x\right).$
+	\end{enumerate}
+	\end{definition}
+
+Boneh \emph{et al.} provided the first construction of an (almost) key-homomorphic PRF without random oracles by basing their construction on the LWE problem.
+By using ideas from LWE-based PRFs constructed by Banerjee, Peikert, and Rosen in Ref.~\cite{banerjee2012pseudorandom} and the reduction from LWE to LWR shown in Proposition~\ref{prop:lwe2lwr}, Boneh \emph{et al.} constructed an (almost) key-homomorphic PRF that has a parameter $\gamma$ that corresponds to the error allowed in the homomorphism.
+
+\begin{definition}[$\gamma$-Almost Key-Homomorphic PRFs~\cite{boneh2013key}]
+	Let $F:\calK \times \calX \to \Z_p^m$ be an efficiently computable function such that $(\calK, \oplus)$ is a group.
+	We say that the tuple $(F, \oplus)$ is a $\gamma$-almost key-homomorphic PRF ($\gamma$-AKHPRF) if the following two properties hold:
+	\begin{enumerate}
+		\item $F$ is a secure pseudorandom function.
+		\item For every $k_1, k_2 \in \calK$ and every $x \in \calX$, there exists a vector $\vec{e} \in [0, \gamma]^{m}$ such that 
+		\[F\left(k_1, x\right) + F\left(k_2, x\right) = F\left(k_1 \oplus k_2, x\right) + \vec{e} \bmod p.\]
+	\end{enumerate}
+\end{definition}
+Since then, the construction by Boneh \emph{et al.} has been generalized and made more efficient in Refs.~\cite{newKeyHom, kim2020key}.
+
+\sam{add the pseudorandom seed generator stuff. and also add the non-uniform LWE stuff.}
+
+\subsection{Federated Learning}
+\emph{Federated learning} (FL) was first proposed by Google in 2017~\cite{mcmahan2017communication}.
+It is a decentralized machine learning paradigm where multiple parties collaboratively train a model without sharing their data.
+Each party trains a local model on their data and sends the model updates to a central server, which aggregates the updates to produce a global model while preserving the privacy of the individual data.
+The key difference between FL and other distributed optimization methods is that FL does not assume that the training data is IID or has equal-size across the parties. 
+FL is particularly useful in scenarios where data privacy is a concern, such as healthcare, finance, and IoT applications~\cite{sheller2020federated, li2020review, yuan2020federated, xu2021federated, nevrataki2023survey, bhatti2024enhancing}.
+
+To be specific, we are interested in the following setting:
+\begin{definition}[Federated Learning~\cite{mcmahan2017communication}]
+		Let $\calP_1, \ldots, \calP_N$ be $N$ different parties with private datasets $\left\{\calD_i\right\}_{i = 1}^N$.
+		Each party $\calP_i$ has a local model $w_i\in \R^{d_i}$ and trains the model on their dataset $\calD_i$.
+		The parties collaboratively train a global model $\vec{w} = \left(w_1, w_2, \ldots, w_N\right)$ by aggregating the local models $w_i$ without sharing $\calD_i$.
+		The global model $\vec{w}$ is updated iteratively by sending the local model updates to a central server, which aggregates the updates to produce the global model.
+
+		Letting $n$ be the size of the total data possessed by all parties and $\ell_j\left(x_j, y_j; w_i\right)$ be some loss function computed on examples $\left(x_j, y_j\right)$ with model parameters $w_i$, the FL model has a finite-sum objective of the form:
+		\[\min_{\vec{w} \in \left(\R^{d_1}, \ldots, \R^{d_N}\right)} f\left(\vec{w}\right)\]
+		where $f\left(\vec{w}\right) = \sum_{i = 1}^N \frac{\left|\calD_i\right|}{n} F_i\left(w_i\right)$ and $F_i\left(w_i\right) = \frac{1}{\left|\calD_i\right|} \sum_{\left(x_j, y_j\right) \in \calD_i}\ell_j\left(x_j, y_j;w_i\right).$
+		The $F_i$ functions are the local loss functions for party $\calP_i$ and the $\ell_j$ functions are the loss functions for each example.
+
+	\end{definition}
+
 \subsection{Current Techniques}
 We can break down privacy-preserving machine learning into two main categories: non-cryptographic (e.g. DP) and cryptographic (e.g. Multi-Party Computation (MPC)).
 % \footnote{For the sake of brevity, we will not be discussing Homomorphic Encryption HE) in this outline, but \emph{verifiable} HE it is not quite practical.}
 
-\paragraph{Differential Privacy.}
+\subsection{Differential Privacy.}
 DP uses noise to mask the contribution of individual data points in statistical analysis, ensuring that sensitive information is protected~\cite{dwork2006differential}. 
 By adding random noise from distributions such as Laplace or Gaussian, DP limits the ability of an adversary to infer specific data, even when multiple queries are made, at the expense of the utility of results. 
 In certain scenarios, correlated noise, where noise is not independent across data contributors, can improve privacy and utility, though verifying its correct implementation becomes more challenging.
@@ -124,14 +238,7 @@ While this is a very promising idea, it has a few (correctable!) drawbacks.
 We make extensive use of the following cryptographic primitives: \emph{Zero-knowledge proofs} (ZKPs)and \emph{homomorphic pseudo-random functions} (HPRFs).
 We also use standard primitives such as commitments.
 
-\emph{Zero-knowledge proofs} (ZKPs) are cryptographic protocols that allow one party, called the prover, to demonstrate the validity of a statement to another party, the verifier, without revealing any additional information beyond the fact that the statement is true. 
-ZK-SNARKs (Zero-Knowledge Succinct Non-Interactive Argument of Knowledge) are a specific type of ZKP that are particularly efficient and scalable, making them suitable for a wide range of applications, from blockchain to secure messaging.
-We will use RISC-0 to produce our ZKPs though other ZKPs could be used as well.
-\footnote{\href{https://risczero.com/}{RISC-0 Homepage}}
 
-\emph{Homomorphic pseudo-random functions}, (HPRFs), introduced in Ref.~\cite{boneh2013key} are pseudo-random functions which are homomorphicover their keys under the addition operation.
-Specifically, for keys $k_1, k_2$ and $x$, we have $F(k_1, x) + F(k_2, x) = F(k_1 + k_2, x)$ where $F$ is the HPRF.
-Generally, HPRFs are constructed from Learning with Rounding (LWR) which is a variant of LWE and have been made more efficient in Refs.~\cite{newKeyHom, kim2020key}.
 
 
 \subsubsection*{Proposed Solution}
