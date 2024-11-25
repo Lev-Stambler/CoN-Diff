@@ -1,0 +1,271 @@
+\section{Preliminaries}
+
+\subsection{Zero-Knowledge Proofs}
+\emph{Zero-knowledge proofs} (ZKPs) are cryptographic protocols that allow one party, called the prover, to demonstrate the validity of a statement to another party, the verifier, without revealing any additional information beyond the fact that the statement is true~\cite{goldwasser2019knowledge}. 
+In the original formulation by Goldwasser, \emph{et al.}, they explored interactive protocols that uses notions of computational and statistical indistinguishabilities to achieve zero-knowledge verification.
+Subsequently, the concept of non-interactive zero-knowledge proofs (NIZKs) was introduced, which allows the prover to generate a proof that can be verified by the verifier without any interaction~\cite{fiat1986prove,blum2019non}.
+These works became fundamental for digital signature schemes and cryptographic identification protocols, making zero-knowledge proofs more practical, especially in cases where communication and exchange of information are unrealistic or undesirable.
+
+
+
+\subsection{Zero-Knowledge Succinct Non-Interactive Argument of Knowledge}
+As non-interactivity becomes more important in modern cryptographic protocols, researchers have developed more efficient and scalable zero-knowledge proofs that do not require interaction between the prover and verifier.
+\emph{zk-SNARKs} (Zero-Knowledge Succinct Non-Interactive Argument of Knowledge) are a specific type of ZKP that is particularly efficient and scalable, making them suitable for a wide range of applications, from blockchain to secure messaging~\cite{ben2014succinct}.
+The theory behind zk-SNARKs was further formalized by Ben-Sasson, \emph{et al.}, who introduced the concept of a \emph{quadratic arithmetic program} (QAP) to represent computations in a succinct and verifiable manner~\cite{ben2013snarks}.
+\emph{Pinocchio} is a popular zk-SNARK construction that uses the QAP framework to generate proofs for NP statements~\cite{parno2016pinocchio}.
+Because blockchain systems require efficient and scalable verification of transactions, zk-SNARKs have become a key tool for ensuring privacy and security in decentralized environments~\cite{sasson2014zerocash,kosba2016hawk}.
+\sam{In our work, we use RISC-0 to produce our ZKPs though other ZKPs could be used as well~\footnote{\href{https://risczero.com/}{RISC-0 Homepage}}.}
+
+\subsection{Pseudo-Random Functions}
+\emph{Pseudo-random functions} (PRFs) are cryptographic primitives that mimic the behavior of random functions while being efficiently computable.
+Some of the well-known PRFs include HMAC, AES, and SHA-256, which are widely used in secure communication protocols and cryptographic applications.
+Lattice-based PRFs have also been developed to provide post-quantum security and resistance to quantum attacks~\cite{peikert2014lattice}.
+Such PRFs are based on the hardness of lattice problems, such as Learning with Errors (LWE) and Ring-LWE, which are believed to be secure against quantum adversaries~\cite{regev2009lattices, lyubashevsky2013ideal}.
+Before we state the definition of LWE, we first provide a metric of quantifying the indistinguishability of two distributions.
+
+\begin{definition}[$(t, \epsilon)$-indistinguishability]
+	Two distributions $D_0$ and $D_1$ are $(t, \epsilon)$-indistinguishable if for any circuit $C$ of size at most $t$, the following holds:
+	\[\left|\Pr[C(D_0) = 1] - \Pr[C(D_1) = 1]\right| \leq \epsilon.\]	
+\end{definition}
+
+\subsubsection{Learning with Errors}
+The LWE problem that was intoduced by Regev forms the foundation for the efficient construction of lattice-based PRFs.
+It is stated as follows:
+
+\begin{definition}[LWE Problem~\cite{regev2009lattices}]
+	A LWE problem is $(t, m, \epsilon)$-hard if the following two distributions are $(t, \epsilon)$-indistinguishable:
+	\begin{enumerate}
+		\item Sample random $\vec{s} \in \Z_q^n$ and output $m$ pairs $\left(\vec{a}_i, b_i\right) \in \Z_q^n \times \Z_p$, where $\vec{a}_i$'s are uniformly random and independent and $b_i = \left\langle \vec{a}_i, \vec{s}\right\rangle + e_i \bmod q$ for small random $e_i$.
+		\item Output $m$ uniformly random and independent pairs $\left(\vec{a}_i, b_i\right) \in \Z_q^n \times \Z_p$.
+	\end{enumerate}
+\end{definition}
+
+\subsubsection{Learning with Rounding}
+\emph{Learning with Rounding} (LWR) is a variant of LWE that can be understood as the ``derandomized'' version of the problem.
+Instead of adding noise to the inner product, we round $\left\langle \vec{a}_i, \vec{s}\right\rangle$ to the nearest element of a public subset of $p$ well-separated values in $\Z_q$, where $p$ is much smaller than $q$~\cite{bogdanov2017pseudorandom}.
+Because there are only $p$ possible rounded values, they can be labeled as elements of $\Z_p$ and denoted as $\left\lfloor\left\langle \vec{a}_i, \vec{s}\right\rangle\right\rceil_p$, where $\lfloor x \rceil_p$ equals $\lfloor (p/q)\cdot x \bmod q\rceil \bmod p$.
+The LWR problem can be stated as follows:
+\begin{definition}[LWR Problem~\cite{banerjee2012pseudorandom}]
+	A LWR problem is $(t, m, \epsilon)$-hard if the following two distributions are $(t, \epsilon)$-indistinguishable:
+	\begin{enumerate}
+		\item Sample random $\vec{s} \in \Z_q^n$ and output $m$ pairs $\left(\vec{a}_i, b_i\right) \in \Z_q^n \times \Z_p$, where $\vec{a}_i$'s are uniformly random and independent and $b_i = \left\lfloor\left\langle \vec{a}_i, \vec{s}\right\rangle\right\rceil_p$.
+		\item Output $m$ uniformly random and independent pairs $\left(\vec{a}_i, b_i\right) \in \Z_q^n \times \Z_p$.
+	\end{enumerate}
+\end{definition}
+
+A useful proposition was introduced by Banerjee, Peikert and Rosen in Ref.~\cite{banerjee2012pseudorandom} that shows that LWR is a weaker assumption than LWE.
+Let us define an LWE-error distribution to be \emph{$B$-bounded} if for all errors $e$ in the support of the distribution it holds that $e \in [-B, B]$.
+In addition, let $RD$ be the cost of rounding an element in $\Z_q$ to the nearest element in $\Z_p$.
+
+\begin{proposition}[LWE hardness Implies LWR hardness~\cite{banerjee2012pseudorandom}]\label{prop:lwe2lwr}
+	If the LWE problem is $(t, m, \epsilon)$-hard for some $B$-bounded error distribution, then the LWR problem is $(t-m\cdot RD, m, (mp(2B+1)/q)+\epsilon)$-hard.
+\end{proposition}
+
+\subsubsection{Non-uniform Learning with Errors}
+While the assumption of LWE hardness is already widely used in lattice-based cryptography, the uniformness assumption of the $\vec{a}$ vector ultimately limits the application of LWE for a greater range of practical problems.
+In Ref.~\cite{boneh2013key}, Boneh, Lewi, Montgomery, and Raghunathan introduced the concept of \emph{non-uniform LWE} to address this limitation.
+To make an explicit distinction between the uniform and non-uniform LWE problems, we introduce the distribution $\eta$ from which $\vec{a}_i' \in \Z_q^{n'}$ is sampled from whereas the vector $\vec{a}_i \in \Z_q^n$ is sampled uniformly at random. 
+
+\begin{definition}[Non-uniform LWE Problem~\cite{boneh2013key}]
+	A non-uniform LWE problem is $(t, m, \epsilon)$-hard if the following two distributions are $(t, \epsilon)$-indistinguishable:
+	\begin{enumerate}
+		\item Sample random $\vec{s} \in \Z_q^n$ and output $m$ pairs $\left(\vec{a}_i', b_i\right) \in \Z_q^{n'} \times \Z_p$, where $\vec{a}_i'$'s are randomly and independently chosen from some distribution $\eta$ and $b_i = \left\langle \vec{a}_i', \vec{s}\right\rangle + e_i \bmod q$ for small random $e_i$.
+		\item Output $m$ uniformly random and independent pairs $\left(\vec{a}_i', b_i\right) \in \Z_q^{n'} \times \Z_p$.
+	\end{enumerate}
+\end{definition}
+
+It was shown in Ref.~\cite{boneh2013key} that for some $n' \geq n$, there exists a reduction from LWE to NLWE for specific choices of $\eta$.
+This implies that the NLWE problem is at least as hard as the LWE problem.
+Given suitable parameters, it has been shown that the following distributions are suitable candidates for $\eta$:
+\begin{enumerate}
+	\item The uniform distribution over $\Z_2^{n'}$ for sufficiently large $n'$,
+	\item a discrete Gaussian distribution over $\Z^{n'}$ with a sufficiently large $n'$ and standard deviation $\sigma$.
+	\item a uniform distribution over a sufficiently large linear subspace $V$ of $\Z_q^{n'}$.
+\end{enumerate}
+
+
+
+\subsubsection{Homomorphic Pseudo-Random Functions}
+LWR is particularly useful for constructing efficient and secure cryptographic primitives, such as \emph{homomorphic pseudo-random functions} (HPRFs)~\cite{boneh2013key}.
+In this paper, we focus on HPRFs that are homomorphic over their keys under the addition operation.
+Such HPRFs are also referred to as \emph{key-homomorphic PRFs} and were originally introduced by Naor, Pinkas, and Reingold in Ref.~\cite{naor1999distributed} where these PRFs were constructed using random oracles and the Decisional Diffie-Hellman hardness assumption.
+
+\begin{definition}[Key-Homomorphic PRFs~\cite{boneh2013key}]
+	Consider an efficiently computable function $F: \calK \times \calX \to \calY$ such that $(\calK, \oplus)$ and $(\calY, \otimes)$ are both groups.
+	We say that the tuple $(F, \oplus, \otimes)$ is a \emph{key-homomorphic} PRF (KHPRF) if the following two properties hold:
+	\begin{enumerate}
+		\item $F$ is a secure pseudorandom function.
+		\item For every $k_1, k_2 \in \calK$ and every $x \in \calX$, $F\left(k_1, x\right) \otimes F\left(k_2, x\right) = F\left(k_1 \oplus k_2, x\right).$
+	\end{enumerate}
+	\end{definition}
+
+Boneh \emph{et al.} provided the first construction of an (almost) key-homomorphic PRF without random oracles by basing their construction on the LWE problem.
+By using ideas from LWE-based PRFs constructed by Banerjee, Peikert, and Rosen in Ref.~\cite{banerjee2012pseudorandom} and the reduction from LWE to LWR shown in Proposition~\ref{prop:lwe2lwr}, Boneh \emph{et al.} constructed an (almost) key-homomorphic PRF that has a parameter $\gamma$ that corresponds to the error allowed in the homomorphism.
+
+\begin{definition}[$\gamma$-Almost Key-Homomorphic PRFs~\cite{boneh2013key}]\label{def:akhprf}
+	Let $F:\calK \times \calX \to \Z_p^m$ be an efficiently computable function such that $(\calK, \oplus)$ is a group.
+	We say that the tuple $(F, \oplus)$ is a $\gamma$-almost key-homomorphic PRF ($\gamma$-AKHPRF) if the following two properties hold:
+	\begin{enumerate}
+		\item $F$ is a secure pseudorandom function.
+		\item For every $k_1, k_2 \in \calK$ and every $x \in \calX$, there exists a vector $\vec{e} \in [0, \gamma]^{m}$ such that 
+		\[F\left(k_1, x\right) + F\left(k_2, x\right) = F\left(k_1 \oplus k_2, x\right) + \vec{e} \bmod p.\]
+	\end{enumerate}
+\end{definition}
+
+Crucially, the construction by Boneh \emph{et al.} uses \emph{seed homomorphic psudorandom generators} (PRGs) to generate the keys for the homomorphic PRFs.
+
+\begin{definition}[Seed Homomorphic PRGs~\cite{boneh2013key}]
+	An efficiently computable function $G: \calX \to \calY$, where $(\calX, \oplus)$ and $(\calY, \otimes)$ are groups, is said to be \emph{seed homomorphic} if the following two properties hold:
+	\begin{enumerate}
+		\item $G$ is a secure PRG.
+		\item For ever $s_1, s_2 \in \calX$, we have that $G\left(s_1\right) \otimes G\left(s_2\right) = G\left(s_1 \oplus s_2\right)$.
+	\end{enumerate}
+\end{definition}
+
+Similar to the notion of approximate key-homomorphism that has been stated for the PRFs in Definition~\ref{def:akhprf}, we can define a notion of approximate seed-homomorphism for the PRGs by assuming the LWR problem is hard and allowing
+\[G_{LWR}\left(s_1 + s_2\right) = G_{LWR}\left(s_1\right) + G_{LWR}\left(s_2\right) + \vec{e}\]
+where $\vec{e} \in \{0, 1, 2\}^m$ is a small error vector.
+
+Without going into the details for how we can construct a $\gamma$-AKHPRF from a $\gamma'$-ASHPRG, we provide some intuition for how a KHPRF can be constructed from a seed-homomorphic PRG as stated in Ref.~\cite{boneh2013key}.
+We start off by considering a seed-homomorphic PRG $G: \calK \to \calK \times \calK$ where $(\calK, \oplus)$ is a group.
+Since the output of $G(s)$ is in $\calK \times \calK$, we can write $G_0(s)$ for the left half of $G(s)$ and $G_1(s)$ for the other half. 
+Now, we can construct the KHPRF $F$ with key space $\calK$ and input space $\{0, 1\}^\ell$ as follows:
+\[F(k, x=x_1, \ldots, x_\ell) = G_{x_\ell}\left(G_{x_{\ell - 1}}\left(\ldots G_{x_2}\left(G_{x_1}(k)\right)\ldots \right)\right).\]
+If $G$ is a secure PRG, then $F$ is a secure PRF.
+Moreover, it can be easily checked that if $G$ is seed-homomorphic, then $F$ is a KHPRF.
+
+Since then, the construction by Boneh \emph{et al.} has been generalized and made more efficient in Refs.~\cite{newKeyHom, kim2020key}.
+
+\subsection{Federated Learning}
+\emph{Federated learning} (FL) was first proposed by Google in 2017~\cite{mcmahan2017communication}.
+It is a decentralized machine learning paradigm where multiple parties collaboratively train a model without sharing their data.
+Each party trains a local model on their data and sends the model updates to a central server, which aggregates the updates to produce a global model while preserving the privacy of the individual data.
+The key difference between FL and other distributed optimization methods is that FL does not assume that the training data is IID or has equal-size across the parties. 
+FL is particularly useful in scenarios where data privacy is a concern, such as healthcare, finance, and IoT applications~\cite{sheller2020federated, li2020review, yuan2020federated, xu2021federated, nevrataki2023survey, bhatti2024enhancing}.
+
+To be specific, we are interested in the following setting:
+\begin{definition}[Federated Learning~\cite{mcmahan2017communication}]
+		Let $\calP_1, \ldots, \calP_N$ be $N$ different parties with private datasets $\left\{\calD_i\right\}_{i = 1}^N$.
+		Each party $\calP_i$ has a local model $w_i\in \R^{d_i}$ and trains the model on their dataset $\calD_i$.
+		The parties collaboratively train a global model $\vec{w} = \left(w_1, w_2, \ldots, w_N\right)$ by aggregating the local models $w_i$ without sharing $\calD_i$.
+		The global model $\vec{w}$ is updated iteratively by sending the local model updates to a central server, which aggregates the updates to produce the global model.
+
+		Letting $n$ be the size of the total data possessed by all parties and $\ell_j\left(x_j, y_j; w_i\right)$ be some loss function computed on examples $\left(x_j, y_j\right)$ with model parameters $w_i$, the FL model has a finite-sum objective of the form:
+		\[\min_{\vec{w} \in \left(\R^{d_1}, \ldots, \R^{d_N}\right)} f\left(\vec{w}\right)\]
+		where $f\left(\vec{w}\right) = \sum_{i = 1}^N \frac{\left|\calD_i\right|}{n} F_i\left(w_i\right)$ and $F_i\left(w_i\right) = \frac{1}{\left|\calD_i\right|} \sum_{\left(x_j, y_j\right) \in \calD_i}\ell_j\left(x_j, y_j;w_i\right).$
+		The $F_i$ functions are the local loss functions for party $\calP_i$ and the $\ell_j$ functions are the loss functions for each example.
+
+	\end{definition}
+
+\subsection{Differential Privacy}
+\emph{Differential Privacy} (DP) uses noise to mask the contribution of individual data points in statistical analysis, ensuring that sensitive information is protected~\cite{dwork2006differential}. 
+By adding random noise from distributions such as Laplace or Gaussian, DP limits the ability of an adversary to infer specific data, even when multiple queries are made, at the expense of the utility of results. 
+In certain scenarios, correlated noise, where noise is not independent across data contributors, can improve privacy and utility, though verifying its correct implementation becomes more challenging.
+For a more in-depth look into DP, we recommend a survey on Local Differential Privacy (LDP)~\cite{yang2023local}.
+In our work, we use the $(\eps, \delta)$-differential privacy definition, though our ideas can be extended to other definitions.
+We have two flavors of DP where noise is either applied locally or non-locally.
+%Intuitively, we can think of differential privacy as being a sort of ``2-wise'' independence condition on the input data: if we replace \emph{one} of the user's piece of data with some other possible piece of data, then differential privacy gaurentees that an adversary \emph{cannot} distinguish between the two datasets up to some probabality.
+%Though not cryptographic in nature, differential privacy offers a notion of ``plausible-deniability'' which can also be generalized to a more $k$-wise independent setting \lev{TODO: cite?}.
+
+\begin{definition}[$(\eps, \delta)$-Differential Privacy,~\cite{Bassily_2015}]
+	Let $\eps > 0$ and $\calX$ be the data element domain.
+	Then, a randomized algorithm, $\calM : \calX^n \rightarrow \calM\left(\calX^n\right)$ that is applied to an $n$-element dataset satisfies $(\eps, \delta)$-differential privacy if and only if for all $\vec{x},\vec{x}' \in \calX^n$ where $\vec{x}'_i \neq \vec{x}_i$ for some $i$ and any $S \subseteq \text{Range}(\calM)$,
+	\[
+		\Pr[\calM(\vec{x}) \in S] \leq e^\eps \Pr[\calM(\vec{x}') \in S] + \delta.
+	\]
+\end{definition}
+
+\lev{Make sure $(\eps, \delta)$-definition is removed elsewhere as well}
+
+\begin{definition}[R\'enyi Divergence, \cite{mironov2017renyi}]
+	For two probability distributions \( P \) and \( Q \) defined over \( R \), the Rényi divergence of order \( \alpha > 1 \) is defined as:
+	\[
+		D_\alpha(P \| Q) =
+		\frac{1}{\alpha - 1} \log \mathbb{E}_{x \sim Q} 
+		\left[ 
+			\left( 
+				\frac{P(x)}{Q(x)} 
+			\right)^\alpha 
+		\right],
+	\]
+	where \( P(x) \) is the density of \( P \) at \( x \), and all logarithms are natural.
+
+	For the endpoints of the interval \( (1, \infty) \), the Rényi divergence is defined by continuity:
+	\[
+		D_1(P \| Q) = \lim_{\alpha \to 1} D_\alpha(P \| Q),
+	\]
+	which can be verified to be the Kullback-Leibler divergence:
+	\[
+		D_1(P \| Q) = \mathbb{E}_{x \sim P} \left[ \log \frac{P(x)}{Q(x)} \right].
+	\]
+	Similarly,
+	\[
+		D_\infty(P \| Q) = \sup_{x \in \text{supp } Q} \log \frac{P(x)}{Q(x)}.
+	\]
+\end{definition}
+
+As pointed out in Ref.~\cite{mironov2017renyi}, if
+\[
+	D_\infty(f(P) \| f(P')) \leq \eps
+\]
+for two adjacent inputs $P, P'$, then $f$ satisfies $(\eps, 0)$-differential privacy.
+\lev{TODO: check on the delta}.
+So, similar to Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}, we will work with the Rényi divergence in our proofs.
+
+\lev{TODO: remove local diff privacy or keep it?}
+
+%\lev{IDK if this is the actual defn}
+% Note that in the above, the randomized algorithm $\calM$ is applied globally.
+% We can also deffine differential privacy locally:
+
+\begin{definition}[$(\eps, \delta)$-Local Differential Privacy,~\cite{Bassily_2015}]
+	Let $\eps > 0$ and $\calX$ be the domain of the data.
+	Then, a randomized algorithm, $\calM_{loc} : \calX \rightarrow \calM_{loc}(\calX)$ which is applied to the data independently satisfies $(\eps, \delta)$-local differential privacy if and only if for all pairs $x, x' \in \calX$
+	for any possible $S \subseteq \text{Range}(\calM_{loc})$, we have
+	\[
+		\Pr[\calM_{loc}(x) \in S] \leq e^\eps \Pr[\calM_{loc}(x') \in S] + \delta.
+	\]
+\end{definition}
+
+Non-local and local DP are usually achieved by adding noise to a dataset.
+Though many mechanisms exist, we outline the \emph{Laplace Mechanism} for non-local DP.
+Let $f: \mathcal{X}^n \rightarrow \R^d$ be some query associated with the entire $n$-element dataset (e.g. learning the mean of the data).
+Then, for any $\vec{x} \in \calX^n$ as outlined in \cite{Bassily_2015} where $N \sim Lap(0, \Delta f/ \eps)^{d}$ where $\Delta f$ is the $\ell_1$ sensitivity of $f$
+\[
+	\calM(\vec{x}) = f(\vec{x}) + N.
+\]
+Analogously, we can think of local-differential privacy as the above but we replace $\vec{x}$ with $x$.
+
+\paragraph{Problem with Differential Privacy:} Non-local DP requires trusting some centralized aggregator.
+For example, in federated learning, each party would have to send their updated gradients \emph{in the clear} to an aggregator.
+Recent work shows that an aggregator can almost perfectly recover the users' data from the gradient delta which yields a large privacy violation~\cite{gupta2022recoveringprivatetextfederated}.
+On the other hand, local DP preserves users' privacy but data degradation worsens with the number of users.
+Specifically, imagine trying to compute the sum of a dataset with $n$ users.
+If each user adds Laplacian noise with a constant standard deviation, $\Delta$, then the sum of the data (calculated by adding all of the noisy inputs from each user) has Laplacian noise with paramater $n \Delta$!
+
+
+\subsection{Current Techniques}
+We can break down privacy-preserving machine learning into two main categories: non-cryptographic (e.g. DP) and cryptographic (e.g. Multi-Party Computation (MPC)).
+% \footnote{For the sake of brevity, we will not be discussing Homomorphic Encryption HE) in this outline, but \emph{verifiable} HE it is not quite practical.}
+
+
+\paragraph{Multi-Party Computation.}
+Secure multi-party computation (SMPC)~\cite{yao1986generate} is the other primary privacy preserving mechanism in ML.
+We draw from a recent survey on SMPC~\cite{zhou2024secure}.
+SMPC is a cryptographic protocol which allows multiple parties to compute a function on their private data without revealing their data to each other.
+It can also be integrated with other techniques like cut-and-choose type proofs~\cite{lindell2016fast} to provide additional security guarantees like data integrity checks.
+Unfortunately, SMPC is not a panacea.
+Specifically, it is very slow with input data integrity checks and cannot scale to large datasets and computations.
+Moreover, practical implementations require many multi-party interactions~\cite{zhao2019secure}.
+
+\subsubsection*{Combining MPC, LWE, and Differential Privacy}
+Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure} introduced the idea of combining Learning with Error (LWE) with differential privacy for aggregation.
+\footnote{we discovered this idea independently prior to finding the referenced paper}
+The key idea is to use an LWE sample for each party $i$, $b_i = A \cdot s_i + e_i$ where $s_i$ is secret and $e_i$ is private noise, to mask each users' data.
+Then, using MPC or a similar protocol, the users can publish $s_{\sum} = \sum s_i$ which can then be used to compute an approximation of the aggregated one-time pads via $A \cdot s_{\sum} \approx \sum b_i = \sum A \cdot s_i + \sum e_i$.
+
+While this is a very promising idea, it has a few (correctable!) drawbacks.
+1) The setup process to generate $s_{\sum}$ must be repeated each time the party's release data.
+2) This setup process can be expensive and expensive to verify (i.e. use verifable variants of MPC in the setup).
+
+

@@ -1,0 +1,84 @@
+\newcommand{\summedSK}{s_{tot}}
+
+\section{Proposed Solution}
+We will specifically focus on improving privacy and integrity in decentralized machine learning where data is additively used as in Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}.
+Instead of using LWE samples as one-time pads though, we will use the output of HPRFs which can in turn be constructed from LWE/ LWR.
+\footnote{Specifically we require \emph{weak} HPRFs so that the keys are leakage resilient}
+The key advantage is that we only need to do a verifiable setup process \emph{once} for each party and then the party can release data essentially an unlimited number of times (up to a polynomial/ sub-exponential number of times depending on assumptions).
+
+\textbf{Adding in Verifiability:} Because each party's evaluation of the HPRF is relatively inexpensive and simple (via a matrix multiply and rounding), we can use ZK-SNARKs to verify that the party's published data is correctly masked relative to the HPRF, that the underlying data is within a certain range (too ensure that the data is not poisoned), and that the noise is not too large (also preventing poisoning).
+As a nice benefit, adding verifiability gives a sort of ``traitor-tracing'' mechanism to the system for $N - 1$ parties while assuming that we have $N /2$ honest parties.
+\footnote{Traitor tracing is specifically useful when using ``carrot and stick'' incentives to ensure that parties are honest (such as proof-of-stake).}
+
+%Though not within scope, given the uniformity of each proof, a proof aggregator could also be used to enhance practicality.
+We sketch the protocol in \cref{fig:prot}.
+
+\begin{figure}[H]
+	\begin{mdframed}
+		Setup: \begin{itemize}
+			\item Each party $i$ generates a secret key $s_i$
+			\item Using MPC, the parties compute $\sum s_i = \summedSK$
+		\end{itemize}
+		Aggregation for time step $t$: \begin{itemize}
+			\item Each party $i$ calls $b_i = F(s_i, t)$  where $F$ is the HPRF
+			\item Each party generates noise $\eta_i$ with standard deviation $O(1/n)$ and publishes data $ct_i = v_i + b_i + \eta_i$ 
+			\item To decode the data, a third party does $\sum_i ct_i - F(\summedSK, t) = \sum_i v_i + \sum \eta_i$
+		\end{itemize}
+	\end{mdframed}
+	\caption{Outline of the protocol without any verifiability}
+	\label{fig:protSimp}
+\end{figure}
+
+\subsubsection*{Soundness and Privacy}
+
+Before proving privacy, we have to recall a theorem about discrete Gaussian noise.
+
+
+\begin{proposition}[Sum of Discrete Gaussians, \cite{kairouz2021distributed}]
+	\label{prop:disc}
+	Let $\sigma \geq \frac{1}{2}$.
+	Let $X_{i,j} \sim \mathcal{N}_\mathbb{Z}(0, \sigma^2)$ independently for each $i$ and $j$.
+	Let $X_i = (X_{i,1}, \dots, X_{i,d}) \in \mathbb{Z}^d$.
+	Let $Z_n = \sum_{i=1}^n X_i \in \mathbb{Z}^d$. Then, for all $\Delta \in \mathbb{Z}^d$ and all $\alpha \in [1, \infty)$,
+	\[
+		D_\alpha(Z_n \parallel Z_n + \Delta) \leq \frac{\alpha \|\Delta\|_2^2}{2n\sigma^2} + \tau d,
+	\]
+	where $\tau := 10 \cdot \sum_{k=1}^{n-1} e^{-2\pi^2\sigma^2k/(k+1)}$.
+\end{proposition}
+
+
+\begin{theorem}[Preservation of Differential Privacy]
+	Assuming that the HPRF is secure, the protocol outlined in \cref{fig:prot} is differentially private up to $\theta n$ malicious parties.
+	\lev{TODO: exact parameters!}
+\end{theorem}
+\begin{proof}[Proof Sketch]
+	By \cref{prop:disc}, we have that as long as long as $\theta n$ parites are not malicious and add discrete Gaussian noise honestly, the sum of the noisey shares satisfies Renyi differential privacy.
+	Then, by the data processing inequality, any function of the sum of the honest shares also satisfies Renyi differential privacy.
+\end{proof}
+
+\begin{theorem}[Liveness]
+	The protocol offers no liveness guarantees: any $1$ party can prevent the protocol from completing.
+\end{theorem}
+\begin{proof}[Proof Sketch]
+	To see why this is the case, any party, $i$, can simply abort and not publish anything.
+	Then, without $s_i$, $A \cdot s_j + e_j$ for $j \neq i$ remains indistinguishable from random.
+\end{proof}
+
+
+\section{Adding in Verifiability}
+\begin{figure}[H]
+	\begin{mdframed}
+		Setup: \begin{itemize}
+			\item Each party $i$ generates a secret key $s_i$
+			\item Using MPC, the parties compute $\sum s_i = \summedSK$
+			\item Each party releases $Comm(s_i)$ where $Comm$ is a randomized commitment function
+		\end{itemize}
+		Aggregation for time step $t$: \begin{itemize}
+			\item Each party $i$ calls $b_i = F(s_i, t)$  where $F$ is the HPRF
+			\item Each party generates noise $\eta_i$ with standard deviation $O(1/n)$ and publishes data $ct_i = v_i + b_i + \eta_i$ as well as a proof that (1) $b_i$ is generated with key $s_i$ relative to $Comm(s_i)$ (2) $b_i = F(s_i, t)$ and (3) $v_i + \eta_i$ are within some bounds specified by the protocol
+			\item To decode the data, a third party checks all the proofs and does $\sum_i ct_i - F(s_{\sum}, t) = \sum_i v_i + \sum \eta_i$
+		\end{itemize}
+	\end{mdframed}
+	\caption{Outline of the final protocol}
+	\label{fig:prot}
+\end{figure}
