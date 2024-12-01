@@ -12,9 +12,9 @@ const server = http.createServer(app);
 const jiffServer = new JIFFServer(server, {
   logs: true, // Enable logging
 });
-
+const field_size = config.SECRET_KEY_FEILDSIZE * (config.N_PARTIES + 1)
 // Apply BigNumber extension with custom field size
-jiffServer.apply_extension(JIFFServerBigNumber, { Zp: config.FIELD_SIZE });
+jiffServer.apply_extension(JIFFServerBigNumber, { Zp: config.MPC_FIELD_SIZE });
 
 // Start server
 server.listen(config.PORT, () => {
