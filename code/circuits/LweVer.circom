@@ -16,30 +16,25 @@ template LWE(N, M) {
 	signal input comm;
 	signal input output_comm;
 	signal input prf_inp;
+	signal input matrix[N][M];
 
 
 	component hasher_comm = MiMCSponge(M + 1, N_ROUNDS, 1);
-	hasher_comm.k <== 42;
+	hasher_comm.k <== 0;
 	component hasher_output_comm = MiMCSponge(N, N_ROUNDS, 1);
-	hasher_output_comm.k <== 42;
-	component mat_gen = MiMCSponge(2, N_ROUNDS, N_MAT_ELEMS);
-	mat_gen.k <== 42;
+	hasher_output_comm.k <== 0;
 
 	// Helpers
 	signal row_sum[N];
-
-	// Generate the matrix 
-	mat_gen.ins[0] <== prf_inp;
-	// Mimc expects at least 2 inputs. Set the second input to 0.
-	mat_gen.ins[1] <== 0;
+	signal _row_accumulator[N][M];
 
 	// Compute the matrix-vector product
 	for (var row = 0; row < N; row++) {
-		row_sum[row] <== 0;
-		for (var col = 0; col < M; col++) {
-			row_sum[row] <== row_sum[row] + mat_gen.outs[row * N + col] * sk[col];
+		_row_accumulator[row][0] <== matrix[row][0] * sk[0];
+		for (var col = 1; col < M; col++) {
+			_row_accumulator[row][col] <== _row_accumulator[row][col - 1] + matrix[row][col] * sk[col];
 		}
-		hasher_output_comm.ins[row] <== row_sum[row];
+		row_sum[row] <== _row_accumulator[row][M - 1];
 	}
 
 	// Verify the hashes
@@ -55,9 +50,6 @@ template LWE(N, M) {
 	output_comm === hasher_output_comm.outs[0];
 
 	//mat_gen[i * N_MAT_ELEMS + j].out;
-	//hasher_comm.ins[j] <== prf_inp * (N_MAT_ELEMS) + i * N + j;
-
-
 }
 
 component main = LWE(128, 128);
