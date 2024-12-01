@@ -5,9 +5,11 @@ const config = require('./config'); // Import configuration
 // Create JIFF client instance
 const jiffClient = new JIFFClient(config.SERVER_URL, config.COMPUTATION_ID, { autoConnect: false });
 
+console.log("Setting big number", config.FIELD_SIZE)
 // Apply BigNumber extension with custom field size
 jiffClient.apply_extension(JIFFClientBigNumber, { Zp: config.FIELD_SIZE });
 
+console.log("attempting connection")
 // Connect to the server
 jiffClient.connect();
 
