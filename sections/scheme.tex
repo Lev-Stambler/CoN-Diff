@@ -75,7 +75,7 @@ Before proving privacy, we have to recall a theorem about discrete Gaussian nois
 		\end{itemize}
 		Aggregation for time step $t$: \begin{itemize}
 			\item Each party $i$ calls $b_i = F(s_i, t)$  where $F$ is the HPRF
-			\item Each party generates noise $\eta_i$ with standard deviation $O(1/n)$ and publishes data $ct_i = v_i + b_i + \eta_i$ as well as a proof that (1) $b_i$ is generated with key $s_i$ relative to $Comm(s_i)$ (2) $b_i = F(s_i, t)$ and (3) $v_i + \eta_i$ are within some bounds specified by the protocol
+			\item Each party generates ternary noise $\eta_i \in \set{-1, 0, 1}^n$ with standard deviation $O(1/n)$ and publishes data $ct_i = v_i + b_i + \eta_i$ as well as a proof that (1) $b_i$ is generated with key $s_i$ relative to $Comm(s_i)$ (2) $b_i = F(s_i, t)$ and (3) $v_i + \eta_i$ are within some bounds specified by the protocol (4) $\eta_i$ is ternary
 			\item To decode the data, a third party checks all the proofs and does $\sum_i ct_i - F(s_{\sum}, t) = \sum_i v_i + \sum \eta_i$
 		\end{itemize}
 	\end{mdframed}
