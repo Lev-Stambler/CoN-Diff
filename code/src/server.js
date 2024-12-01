@@ -11,6 +11,7 @@ const server = http.createServer(app);
 // JIFF server setup
 const jiffServer = new JIFFServer(server, {
   logs: true, // Enable logging
+  party_count: config.N_PARTIES
 });
 const field_size = config.SECRET_KEY_FEILDSIZE * (config.N_PARTIES + 1)
 // Apply BigNumber extension with custom field size
