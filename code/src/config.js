@@ -21,10 +21,12 @@ const config = {
   SERVER_URL: 'http://localhost:3000',
   PORT: 3000,
   COMPUTATION_ID: 'sum_example',
-  FIELD_SIZE: BigInt('340282366920938463463374607431768211507'), // 128-bit prime
+  FIELD_SIZE: BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617'), // 128-bit prime
   MPC_FIELD_SIZE: nextPrime(_SECRET_FIELD_SIZE * (_N_PARTIES + 1)), // Secret key field size
   //FIELD_SIZE: BigInt('340282366920938463463374607431768211507'), // 128-bit prime
   N_PARTIES: _N_PARTIES, // Number of parties in the MPC computation
+  N: 80,
+  M: 80,
 };
 
 module.exports = config;

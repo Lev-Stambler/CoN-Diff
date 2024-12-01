@@ -1,8 +1,7 @@
 pragma circom 2.0.0;
-include "circomlib/circuits/poseidon.circom";
-include "circomlib/circuits/mimcsponge.circom";
-include "circomlib/circuits/gates.circom";
-include "circomlib/circuits/comparators.circom";
+include "../node_modules/circomlib/circuits/mimcsponge.circom";
+include "../node_modules/circomlib/circuits/gates.circom";
+include "../node_modules/circomlib/circuits/comparators.circom";
 
 template CheckInSet() {
 	signal input x;        // Input signal to check
@@ -51,15 +50,12 @@ template LWE(N, M) {
 
 	// Public inputs
 	signal input comm;
-	signal input output_comm;
-	signal input prf_inp;
 	signal input matrix[N][M];
+	signal input outputs[N];
 
 
 	component hasher_comm = MiMCSponge(M + 1, N_ROUNDS, 1);
 	hasher_comm.k <== 0;
-	component hasher_output_comm = MiMCSponge(N, N_ROUNDS, 1);
-	hasher_output_comm.k <== 0;
 
 	// Helpers
 	signal row_sum[N];
@@ -90,12 +86,11 @@ template LWE(N, M) {
 	comm === hasher_comm.outs[0];
 
 	for (var i = 0; i < N; i++) {
-		hasher_output_comm.ins[i] <== row_sum[i] + error[i] + data[i];
+		outputs[i] === row_sum[i] + error[i] + data[i];
 	}
-	output_comm === hasher_output_comm.outs[0];
 
 	//mat_gen[i * N_MAT_ELEMS + j].out;
 }
 
-component main = LWE(128, 128);
+component main {public [comm, outputs, matrix]} = LWE(80, 80);
 
