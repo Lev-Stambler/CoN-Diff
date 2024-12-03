@@ -4,9 +4,8 @@
     When considering private data---such as financial, medical, and political data---privacy is paramount.
     Unfortunately, privacy is often at odds with data utility and the AI model's robustness against adversarial inputs.
     In this work, we propose a novel approach to privacy-preserving machine learning that primarily combines Differential Privacy (DP) and Learning with Errors (LWE) as seen in Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}.
-    In addition, we add zero-knowledge proofs (ZKPs) to ensure that inputted data is not poisoned with traitor-tracing capabilities.
-    ~\footnote{Poisoned data is data that is intentionally manipulated to degrade the performance of the model.
-    For example, a model trying to calculate the average height of a group of people could be poisoned by inputting a height of 1000 feet.}
+    In addition, we add zero-knowledge proofs (ZKPs) to ensure that inputted data is not poisoned with traitor-tracing capabilities~\footnote{Poisoned data is data that is intentionally manipulated to degrade the performance of the model.
+    For example, a model trying to calculate the average height of a group of people could be poisoned by inputting a height of 1000 feet.}.
     Moreover, we use new cryptographic tools to allow for \emph{efficient and verifiable} repeated data releases without a repeated setup process.
 
 
