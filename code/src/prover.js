@@ -115,19 +115,6 @@ const genPubMatrix = async (N, M, prf_inp) => {
 	return matrix
 }
 
-
-
-//genPubMatrix(config.N, config.M, 0).then(async matrix => {
-//	const error = generateWithNodeCrypto(config.N);
-//	const data = generateWithNodeCrypto(config.N);
-//	const sk = genSK(config.M);
-//	const sk_rand = 0; // TODO: Generate random value for real...
-//	const sk_comm = await config.genComm(sk, sk_rand);
-//
-//	verify_circuit_test(matrix, sk_comm, sk, sk_rand, error, data)
-//})
-
-
 const proveStep = async (data, prf_inp, sk_comm, sk, sk_rand, error) => {
 	const matrix = await genPubMatrix(config.N, config.M, prf_inp);
 	const outputs = await verify_circuit_test(matrix, sk_comm, sk, sk_rand, error, data)
@@ -145,11 +132,13 @@ const sk_comm = config.deserializeBigInt(fs.readFileSync(config.commPath(partyId
 const sk_rand = config.deserializeBigInt(fs.readFileSync(config.commRandFilePath(partyId), 'utf8'));
 const error = generateWithNodeCrypto(config.N);
 const data = generateDummyDataWithNodeCrypto(config.N); // We have this as a dummy for now!
-const dp_data = data.map((d, i) => d 
-	(d + config.sampleDiscreteGaussian(config.N_PARTIES)) * config.SCALE_DATA_FACTOR
+const dp_data = data.map((d, i) =>  
+	(d + config.sampleDiscreteGaussian(config.N_PARTIES)) + config.SCALE_OFFSET_FACTOR
 );
-console.log("Proving step", partyId, prfInp, dp_data);
+console.log("Proving step", partyId, dp_data);
 proveStep(dp_data, prfInp, sk_comm, sk, sk_rand, error).then(outputs => {
 	console.log(outputs);
+	// Write outputs to file
+	fs.writeFileSync(config.outputFilePath(partyId), outputs.map(config.serializeBigInt), 'utf8');
 })
 

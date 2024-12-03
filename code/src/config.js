@@ -1,3 +1,5 @@
+const buildMimcSponge = require("circomlibjs").buildMimcSponge;
+
 const _N_PARTIES = 3;
 const _SECRET_FIELD_SIZE = 2;
 
@@ -69,7 +71,7 @@ const config = {
 	SERVER_URL: 'http://localhost:3000',
 	PORT: 3000,
 	COMPUTATION_ID: 'sum_example',
-	SCALE_DATA_FACTOR: _N_PARTIES * 100, // Scale factor for fixed-point arithmetic to offset the error
+	SCALE_OFFSET_FACTOR: _N_PARTIES * 1_000,
 	FIELD_SIZE: BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617'), // 128-bit prime
 	MPC_FIELD_SIZE: nextPrime(_SECRET_FIELD_SIZE * (_N_PARTIES + 1)), // Secret key field size
 	//FIELD_SIZE: BigInt('340282366920938463463374607431768211507'), // 128-bit prime
@@ -80,11 +82,14 @@ const config = {
 	secretFilePath: (partyId) => `db/party_${partyId}_sk.json`,
 	commRandFilePath: (partyId) => `db/party_${partyId}_comm.json`,
 	commPath: (partyId) => `db/public_party_${partyId}_comm.json`,
+	outputFilePath: (partyId) => `db/public_party_${partyId}_output.json`,
+	proofFilePath: (partyId) => `db/public_party_${partyId}_proof`,
 	serializeBigInt,
 	deserializeBigInt,
 	sampleDiscreteGaussian,
 	genComm: async (sk, r) => {
-		await lazyLoad()
+		const mimcSponge = await buildMimcSponge();
+		F = mimcSponge.F;
 		// Second argument is k (which we set to 0)
 		const out = [mimcSponge.multiHash([...sk, r], 0, 1)]
 		console.log(out)
