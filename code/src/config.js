@@ -84,6 +84,7 @@ const config = {
 	commPath: (partyId) => `db/public_party_${partyId}_comm.json`,
 	outputFilePath: (partyId) => `db/public_party_${partyId}_output.json`,
 	proofFilePath: (partyId) => `db/public_party_${partyId}_proof`,
+	pubSigFilePath: (partyId) => `db/public_party_${partyId}_sigs`,
 	serializeBigInt,
 	deserializeBigInt,
 	sampleDiscreteGaussian,

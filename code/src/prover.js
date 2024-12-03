@@ -75,7 +75,7 @@ function genSK(N) {
 /**
  * @param {Array<Array<BigInt>>} matrix
  */
-const verify_circuit_test = async (matrix, sk_comm, sk, sk_rand, error, data) => {
+const verify_circuit_test = async (matrix, sk_comm, sk, sk_rand, error, data, partyId, skip_proof_gen=false) => {
         circuit = await wasm_tester(path.join(__dirname, "..", "circuits", "LweVer.circom"), {
 		
 	});
@@ -87,6 +87,16 @@ const verify_circuit_test = async (matrix, sk_comm, sk, sk_rand, error, data) =>
 		) % Fp);
 
 	const w = await circuit.calculateWitness({matrix, outputs, comm: sk_comm, sk, sk_rand, error, data});
+
+
+	if (!skip_proof_gen) {
+		const { proof, publicSignals }  = await snarkjs.groth16.fullProve( {matrix, outputs, comm: sk_comm, sk, sk_rand, error, data}, "circuits/LweVer.wasm", "circuits.zkey");
+		fs.writeFileSync(config.proofFilePath(partyId), JSON.stringify(proof));
+		fs.writeFileSync(config.pubSigFilePath(partyId), JSON.stringify(publicSignals));
+	}
+	const vKey = JSON.parse(fs.readFileSync("verification_key.json"));
+	const res = await snarkjs.groth16.verify(vKey, publicSignals, proof);
+
 	return outputs;
 }
 
@@ -115,9 +125,9 @@ const genPubMatrix = async (N, M, prf_inp) => {
 	return matrix
 }
 
-const proveStep = async (data, prf_inp, sk_comm, sk, sk_rand, error) => {
+const proveStep = async (data, prf_inp, sk_comm, sk, sk_rand, error, partyId) => {
 	const matrix = await genPubMatrix(config.N, config.M, prf_inp);
-	const outputs = await verify_circuit_test(matrix, sk_comm, sk, sk_rand, error, data)
+	const outputs = await verify_circuit_test(matrix, sk_comm, sk, sk_rand, error, data, partyId);
 	return outputs
 }
 
@@ -136,9 +146,9 @@ const dp_data = data.map((d, i) =>
 	(d + config.sampleDiscreteGaussian(config.N_PARTIES)) + config.SCALE_OFFSET_FACTOR
 );
 console.log("Proving step", partyId, dp_data);
-proveStep(dp_data, prfInp, sk_comm, sk, sk_rand, error).then(outputs => {
+proveStep(dp_data, prfInp, sk_comm, sk, sk_rand, error, partyId).then(outputs => {
 	console.log(outputs);
 	// Write outputs to file
-	fs.writeFileSync(config.outputFilePath(partyId), outputs.map(config.serializeBigInt), 'utf8');
+	fs.writeFileSync(config.outputFilePath(partyId), JSON.stringify(outputs.map(config.serializeBigInt)), 'utf8');
 })
 
