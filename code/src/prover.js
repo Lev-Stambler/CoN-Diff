@@ -3,6 +3,7 @@ const wasm_tester = require("circom_tester").wasm;
 const path = require("path");
 const config = require("./config");
 const crypto = require("crypto");
+const fs = require("fs");
 
 const CIRCOM_FILE = "LweVer.circom";
 
@@ -26,6 +27,21 @@ function matrixVectorMultiply(matrix, vector, Fp) {
 
   return result;
 }
+
+
+// For Node.js environments
+function generateDummyDataWithNodeCrypto(N) {
+  const result = new Array(N);
+  const randomArray = crypto.randomBytes(N);
+
+  for (let i = 0; i < N; i++) {
+    result[i] = randomArray[i] % 10; // Returns 0, 1, or 2
+  }
+
+  return result;
+}
+
+
 
 // For Node.js environments
 function generateWithNodeCrypto(N) {
@@ -82,17 +98,6 @@ const lazyLoad = async () => {
 	}
 }
 
-const genComm = async (sk, r) => {
-	await lazyLoad()
-
-	// Second argument is k (which we set to 0)
-	const out = [mimcSponge.multiHash([...sk, r], 0, 1)]
-	console.log(out)
-	const outsSerial = out.map(o => F.toObject(o))
-
-	return outsSerial[0]
-}
-
 const genPubMatrix = async (N, M, prf_inp) => {
 	await lazyLoad()
 
@@ -112,22 +117,39 @@ const genPubMatrix = async (N, M, prf_inp) => {
 
 
 
-genPubMatrix(config.N, config.M, 0).then(async matrix => {
-	const error = generateWithNodeCrypto(config.N);
-	const data = generateWithNodeCrypto(config.N);
-	const sk = genSK(config.M);
-	const sk_rand = 0; // TODO: Generate random value for real...
-	const sk_comm = await genComm(sk, sk_rand);
+//genPubMatrix(config.N, config.M, 0).then(async matrix => {
+//	const error = generateWithNodeCrypto(config.N);
+//	const data = generateWithNodeCrypto(config.N);
+//	const sk = genSK(config.M);
+//	const sk_rand = 0; // TODO: Generate random value for real...
+//	const sk_comm = await config.genComm(sk, sk_rand);
+//
+//	verify_circuit_test(matrix, sk_comm, sk, sk_rand, error, data)
+//})
 
-	verify_circuit_test(matrix, sk_comm, sk, sk_rand, error, data)
-})
 
-
-const proveStep = async (data, prf_inp, sk_comm, sk, sk_rand, error, data) => {
-	const error = generateWithNodeCrypto(config.N);
+const proveStep = async (data, prf_inp, sk_comm, sk, sk_rand, error) => {
 	const matrix = await genPubMatrix(config.N, config.M, prf_inp);
 	const outputs = await verify_circuit_test(matrix, sk_comm, sk, sk_rand, error, data)
 	return outputs
 }
 
-module.exports = genPubMatrix;
+//module.exports = genPubMatrix;
+const args = process.argv.slice(2);
+const partyId = parseInt(args[0]);
+const prfInp = parseInt(args[1]);
+
+// load secret key, sk_comm, and sk_rand
+const sk = JSON.parse(fs.readFileSync(config.secretFilePath(partyId), 'utf8'));
+const sk_comm = config.deserializeBigInt(fs.readFileSync(config.commPath(partyId), 'utf8'));
+const sk_rand = config.deserializeBigInt(fs.readFileSync(config.commRandFilePath(partyId), 'utf8'));
+const error = generateWithNodeCrypto(config.N);
+const data = generateDummyDataWithNodeCrypto(config.N); // We have this as a dummy for now!
+const dp_data = data.map((d, i) => d 
+	(d + config.sampleDiscreteGaussian(config.N_PARTIES)) * config.SCALE_DATA_FACTOR
+);
+console.log("Proving step", partyId, prfInp, dp_data);
+proveStep(dp_data, prfInp, sk_comm, sk, sk_rand, error).then(outputs => {
+	console.log(outputs);
+})
+

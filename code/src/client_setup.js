@@ -118,16 +118,19 @@ const main = async (N, M, partyId) => {
 
 	const filePath = config.secretFilePath(partyId);
 	const randFilePath = config.commRandFilePath(partyId);
+	const sk_comm = await config.genComm(sk, commRand);
 	fs.writeFileSync(filePath, JSON.stringify(sk, null, 2), 'utf8');
 	fs.writeFileSync(randFilePath, config.serializeBigInt(commRand), 'utf8');
+	fs.writeFileSync(config.commPath(partyId), config.serializeBigInt(sk_comm, null, 2), 'utf8');
+	
 	// Perform aggregation and save secret key
 	await aggWrapper(sk, partyId);
 }
 
 const args = process.argv.slice(2);
-const N = parseInt(args[0]);
-const M = parseInt(args[1]);
-const partyId = parseInt(args[2]);
+const N = config.N;
+const M = config.M;
+const partyId = parseInt(args[0]);
 console.log(`Running client setup with N=${N}, M=${M}, partyId=${partyId}`, typeof(N));
 main(N, M, partyId);
 
