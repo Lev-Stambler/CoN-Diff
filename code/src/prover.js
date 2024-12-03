@@ -4,6 +4,7 @@ const path = require("path");
 const config = require("./config");
 const crypto = require("crypto");
 const fs = require("fs");
+const snarkjs = require("snarkjs");
 
 const CIRCOM_FILE = "LweVer.circom";
 
@@ -90,12 +91,12 @@ const verify_circuit_test = async (matrix, sk_comm, sk, sk_rand, error, data, pa
 
 
 	if (!skip_proof_gen) {
-		const { proof, publicSignals }  = await snarkjs.groth16.fullProve( {matrix, outputs, comm: sk_comm, sk, sk_rand, error, data}, "circuits/LweVer.wasm", "circuits.zkey");
+		const { proof, publicSignals }  = await snarkjs.groth16.fullProve( {matrix, outputs, comm: sk_comm, sk, sk_rand, error, data}, "circuits/LweVer_js/LweVer.wasm", "circuits/LweVer.zkey");
 		fs.writeFileSync(config.proofFilePath(partyId), JSON.stringify(proof));
 		fs.writeFileSync(config.pubSigFilePath(partyId), JSON.stringify(publicSignals));
+		const vKey = JSON.parse(fs.readFileSync("circuits/ver_key.json"));
+		const res = await snarkjs.groth16.verify(vKey, publicSignals, proof);
 	}
-	const vKey = JSON.parse(fs.readFileSync("verification_key.json"));
-	const res = await snarkjs.groth16.verify(vKey, publicSignals, proof);
 
 	return outputs;
 }
