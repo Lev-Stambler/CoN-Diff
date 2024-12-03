@@ -1,0 +1,3 @@
+[submodule "code/mpc/MP-SPDZ"]
+	path = code/mpc/MP-SPDZ
+	url = https://github.com/data61/MP-SPDZ.git
