@@ -1,30 +1,24 @@
-const express = require('express');
-const http = require('http');
-const JIFFServer = require('jiff-mpc/lib/jiff-server');
-const JIFFServerBigNumber = require('jiff-mpc/lib/ext/jiff-server-bignumber');
+var path = require('path');
 const config = require('./config'); // Import configuration
+var express = require('express');
+var app = express();
+var http = require('http').Server(app);
 
-// Create Express app
-const app = express();
-const server = http.createServer(app);
+// Serve static files
+//Configure App
+app.use('/', express.static(path.join(__dirname)));
+// app.use('/jiff', express.static(path.join(__dirname, 'node_modules', 'jiff-mpc', 'dist')));
+// app.use('/jiff/ext', express.static(path.join(__dirname, 'node_modules', 'jiff-mpc', 'lib', 'ext')));
 
-// JIFF server setup
-const jiffServer = new JIFFServer(server, {
-  logs: true, // Enable logging
-  party_count: config.N_PARTIES
+const { JIFFServer, JIFFServerBigNumber } = require('jiff-mpc');
+const jiffServer = new JIFFServer(http, { logs: true });
+//jiffServer.apply_extension(JIFFServerBigNumber);
+
+// Serve static files.
+http.listen(config.PORT, function () {
+  console.log(`listening on *:${config.PORT}`);
 });
-const field_size = config.SECRET_KEY_FEILDSIZE * (config.N_PARTIES + 1)
-// Apply BigNumber extension with custom field size
-jiffServer.apply_extension(JIFFServerBigNumber, { Zp: config.MPC_FIELD_SIZE });
 
-// Start server
-server.listen(config.PORT, () => {
-  console.log(`Server running at ${config.SERVER_URL}`);
-  console.log(`Expected number of parties: ${config.N_PARTIES}`);
-});
-
-// API endpoint (Optional)
-app.get('/', (req, res) => {
-  res.send('Secure MPC Server is Running!');
-});
+console.log('To run a node.js based party: node party.js <input>');
+console.log();
 

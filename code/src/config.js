@@ -17,6 +17,28 @@ function nextPrime(n) {
     return candidate;
 }
 
+/**
+ * Serialize an object with BigInt values to a JSON string.
+ * @param {Object} obj - The object to serialize.
+ * @returns {string} - The serialized JSON string.
+ */
+function serializeBigInt(obj) {
+    return JSON.stringify(obj, (_, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+    );
+}
+
+/**
+ * Deserialize a JSON string back into an object, converting stringified BigInt values.
+ * @param {string} json - The JSON string to deserialize.
+ * @returns {Object} - The deserialized object with BigInt values.
+ */
+function deserializeBigInt(json) {
+    return JSON.parse(json, (_, value) =>
+        /^[0-9]+$/.test(value) ? BigInt(value) : value
+    );
+}
+
 const config = {
   SERVER_URL: 'http://localhost:3000',
   PORT: 3000,
@@ -30,6 +52,8 @@ const config = {
   AGG_SK_FILE_PATH: 'db/aggregated_sk.json',
   secretFilePath: (partyId) => `db/party_${partyId}_sk.json`,
   commRandFilePath: (partyId) => `db/party_${partyId}_comm.json`,
+  serializeBigInt,
+  deserializeBigInt,
 };
 
 module.exports = config;
