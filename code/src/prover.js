@@ -71,19 +71,7 @@ const verify_circuit_test = async (matrix, sk_comm, sk, sk_rand, error, data) =>
 		) % Fp);
 
 	const w = await circuit.calculateWitness({matrix, outputs, comm: sk_comm, sk, sk_rand, error, data});
-
-//	// Private inputs
-//	signal input sk[M];
-//	signal input sk_rand;
-//	signal input error[N];
-//	signal input data[N];
-//
-//	// Public inputs
-//	signal input comm;
-//	signal input matrix[N][M];
-//
-
-
+	return outputs;
 }
 
 
@@ -110,7 +98,7 @@ const genPubMatrix = async (N, M, prf_inp) => {
 
 	const out = mimcSponge.multiHash([prf_inp, 0], 0, N * M)
 	const outsSerial = out.map(o => F.toObject(o))
-	
+
 	let matrix = [];
 	for (let i = 0; i < N; i++) {
 		let row = [];
@@ -123,12 +111,23 @@ const genPubMatrix = async (N, M, prf_inp) => {
 }
 
 
+
 genPubMatrix(config.N, config.M, 0).then(async matrix => {
 	const error = generateWithNodeCrypto(config.N);
 	const data = generateWithNodeCrypto(config.N);
 	const sk = genSK(config.M);
 	const sk_rand = 0; // TODO: Generate random value for real...
 	const sk_comm = await genComm(sk, sk_rand);
-	
+
 	verify_circuit_test(matrix, sk_comm, sk, sk_rand, error, data)
 })
+
+
+const proveStep = async (data, prf_inp, sk_comm, sk, sk_rand, error, data) => {
+	const error = generateWithNodeCrypto(config.N);
+	const matrix = await genPubMatrix(config.N, config.M, prf_inp);
+	const outputs = await verify_circuit_test(matrix, sk_comm, sk, sk_rand, error, data)
+	return outputs
+}
+
+module.exports = genPubMatrix;

@@ -27,6 +27,9 @@ const config = {
   N_PARTIES: _N_PARTIES, // Number of parties in the MPC computation
   N: 80,
   M: 80,
+  AGG_SK_FILE_PATH: 'db/aggregated_sk.json',
+  secretFilePath: (partyId) => `db/party_${partyId}_sk.json`,
+  commRandFilePath: (partyId) => `db/party_${partyId}_comm.json`,
 };
 
 module.exports = config;
