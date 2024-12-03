@@ -94,6 +94,7 @@ const verify_circuit_test = async (matrix, sk_comm, sk, sk_rand, error, data, pa
 		const { proof, publicSignals }  = await snarkjs.groth16.fullProve( {matrix, outputs, comm: sk_comm, sk, sk_rand, error, data}, "circuits/LweVer_js/LweVer.wasm", "circuits/LweVer.zkey");
 		fs.writeFileSync(config.proofFilePath(partyId), JSON.stringify(proof));
 		fs.writeFileSync(config.pubSigFilePath(partyId), JSON.stringify(publicSignals));
+		console.log("Proof generated and now verifying...");
 		const vKey = JSON.parse(fs.readFileSync("circuits/ver_key.json"));
 		const res = await snarkjs.groth16.verify(vKey, publicSignals, proof);
 	}
