@@ -84,9 +84,9 @@ We sketch the protocol in \cref{fig:prot}.
 		\end{itemize}
 		Aggregation for time step $t$: \begin{itemize}
 			\item Each party $i$ calls $b_i = F(s_i, t)$  where $F$ is the HPRF
-			\item Each party generates (quantized) Gaussian noise $\eta_i \in \Z^n$ with standard deviation $O(1/n)$ and scaled by quantization factor $Q$.
+			\item Each party generates (quantized) Gaussian noise $\eta_i \in \Z^n$ with standard deviation $O(1/n)$.
 			\item  For data $v_i$ and $PRF$ output $b_i$,
-				each party publishes data $ct_i = Q \cdot v_i + b_i + \eta_i$
+				each party publishes data $ct_i = \lfloor Q \cdot (v_i + b_i) \rfloor  + \eta_i$ for quantization/ offset parameter $Q$.
 			\item Each party publishes a proof that (1) $b_i$ is generated with key $s_i$ relative to $Comm(s_i)$, (2) $b_i = F(s_i, t)$, and (3) $v_i + \eta_i$ are within some bounds specified by the protocol
 			\item To decode the data, a third party checks all the proofs and does $\left(\sum_i ct_i - F(s_{\sum}, t)\right) = \left(\sum_i v_i + \sum \eta_i\right) / Q$
 		\end{itemize}
