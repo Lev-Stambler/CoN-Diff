@@ -2,6 +2,7 @@ pragma circom 2.0.0;
 include "../node_modules/circomlib/circuits/mimcsponge.circom";
 include "../node_modules/circomlib/circuits/gates.circom";
 include "../node_modules/circomlib/circuits/comparators.circom";
+include "../node_modules/circomlib/circuits/compconstant.circom";
 
 template CheckInSet() {
 	signal input x;        // Input signal to check
@@ -38,7 +39,7 @@ template CheckInSet() {
 }
 
 
-template LWE(N, M) {
+template LWE(N, M, DATA_BOUND) {
 	var N_MAT_ELEMS = N * M;
 	var N_ROUNDS = 220;
 
@@ -78,6 +79,17 @@ template LWE(N, M) {
 		check_error[i].isValid === 1;
 	}
 
+	// Check that the data satisfies some check (for us it is a range bound)
+	component check_data[N];
+	component n2b[N];
+	for (var i = 0; i < N; i++) {
+		n2b[i] = Num2Bits(254);
+		n2b[i].in <== data[i];
+		check_data[i] = CompConstant(DATA_BOUND);
+		check_data[i].in <== n2b[i].out;
+		check_data[i].out === 0; // Ensure that the input is smaller than or equal to DATA_BOUND
+	}
+
 	// Verify the hashes
 	for (var i = 0; i < M; i++) {
 		hasher_comm.ins[i] <== sk[i];
@@ -92,5 +104,6 @@ template LWE(N, M) {
 	//mat_gen[i * N_MAT_ELEMS + j].out;
 }
 
-component main {public [comm, outputs, matrix]} = LWE(80, 80);
+// TODO: remember to scale "SCALE_OFFSET" to the correct value
+component main {public [comm, outputs, matrix]} = LWE(80, 80, 10000);
 
