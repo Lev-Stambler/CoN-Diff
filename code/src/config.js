@@ -1,4 +1,5 @@
-const buildMimcSponge = require("circomlibjs").buildMimcSponge;
+
+buildMimcSponge = require("circomlibjs").buildMimcSponge;
 
 const _N_PARTIES = 3;
 const _SECRET_FIELD_SIZE = 2;

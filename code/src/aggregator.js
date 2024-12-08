@@ -52,23 +52,33 @@ const perPartyVer = async (matrix, party_id) => {
 		pubSigs
 		, proof);
 	console.log("Party", party_id, res)
-	return res, output;
+	return [res, output]
 }
 
 const aggregate = async (n_parties, prf_input) => {
 	const mat = await genPubMatrix(config.N, config.M, prf_input)
-	const reses = await Promise.all(new Array(n_parties).fill(0).map(async (_, i) => {
-		await perPartyVer(mat, i + 1)
-	}))
+	const reses = await Promise.all(new Array(n_parties).fill(0).map((_, i) =>
+		perPartyVer(mat, i + 1)
+	))
 	if (!reses.every(r => r[0])){
 		throw "Some parties failed"
 	}
+	console.log("All parties verified")
 	const outputs = reses.map(r => r[1])
-	const agg_output = outputs.reduce((a, b) => a + b, 0n)
+
+	const agg_output = Array(config.N).fill(0).map((_, i) => {
+		let a = BigInt(0)
+		for (let j = 0; j < n_parties; j++) {
+			a = (a + BigInt(outputs[j][i].trim().replace(/"/g, ''))) % config.FIELD_SIZE
+		}
+		return a % config.FIELD_SIZE
+	})
+	console.log("Aggregated output", agg_output)
 
 	const agg_sk = config.deserializeBigInt(fs.readFileSync(config.AGG_SK_FILE_PATH, "utf-8"))
 	const multed  = matrixVectorMultiply(mat, agg_sk, config.FIELD_SIZE)
-	const ret = agg_output - multed
+	const ret = agg_output.map((_, i) => agg_output[i] - multed[i])
+	console.log("Final output", ret)
 	return ret
 }
 
