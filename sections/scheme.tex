@@ -95,8 +95,52 @@ We sketch the protocol in \cref{fig:prot}.
 	\label{fig:prot}
 \end{figure}
 
-% Delta = sum of v_is
-% Everything has to be a vector
+\section{Specific Implementation Details}
+In this section, we provide some specific implementation details for the protocol outlined in \cref{fig:prot}.
 
-% Define theta to be some fraction that should be related to epsilon and noise parameter
-% CHange n in Prop 3.1 to honest parties
+\subsubsection*{HPRF}
+To implement the HPRF, we use a very simply LWE/ LWR-based construction similar to that in Ref.~\cite{boneh2013key}.
+Unlike in Ref.~\cite{boneh2013key}, we will use the \emph{random oracle model} to dramatically simplify the construction.
+
+Specifically, we will use the following construction for $F(s, t)$:
+\begin{enumerate}
+	\item Let $n, m, q$ be learning with errors/ learning with rounding parameters.
+		Let $p = \lfloor q / 4 \rfloor$
+	\item Use random oracle $H$ to generate a matrix $A \in \Z_q^{n \times m}$
+	\item Return $\lfloor A \cdot s \rfloor_{\mod p}$ where $\lfloor \cdot \rfloor_{\mod p}$ is the rounding operation modulo $p$.
+\end{enumerate}
+
+\subsubsection*{MPC}
+To compute the aggregated secret key, we can use a simple MPC protocol.
+Specifically, we use Jiff, an MPC Javascript native library, to compute the sum of the secret keys.
+To improve efficiency, we use \emph{binary secrets} for the key of the homomorphic PRF.
+As pointed out by \lev{TODO cite}, binary-key learning with errors (resp. binary-key learning with rounding) is secure against PPT adversaries if the underlying LWE (resp. LWR) assumption holds.
+Otherwise, we use the simple ``sadd'' functionality in Jiff to compute the sum of the secret keys.
+Unfortunately, Jiff requires a coordinating server to run the MPC protocol which adds a single point of failure to the setup protocol.
+We note though that setup only needs to be run once and the server can be run by a trusted third party.
+
+\subsubsection*{Proofs}
+We use Circom and SnarkJS with Groth16 \lev{TODO cite} to generate the zk-SNARKs.
+
+Specifically, we have the following optimizations:
+\begin{itemize}
+	\item Rather than use a \emph{deterministic} HPRF, we use learning with errors instead of learning with rounding.
+		Specifically, we add random ternary (in $\set{-1, 0, 1}$) noise to $A \cdot s$.
+		To recover a determistic output, we have the aggregator round the summed output to the nearest multiple of $p$.
+		This trick allows us to avoid the need to check rounding in the zk-SNARK and rather just check that the noise is in $\set{-1, 0, 1}$ which requires far fewer constraints.
+	\item For our commitments, we use the MiMC hash function as the hash function is more friendly to arithmetic circuits than more standard hash functions (like SHA-256) and thus requires fewer constraints.
+\end{itemize}
+Setting $n, m = 80$ and $q$ equal to the Circom modulus,
+\footnote{
+	The Circom modulus is $21888242871839275222246405745257275088548364400416034343698204186575808495617$.
+	Technically, having such a big modulus with ternary noise may cause security concerns and seems quite inefficient.
+	Future work could ``pack'' multiple multiplications over the LWE modulus into a single Circom multiplication to save on constraints.
+	Doing so would also make the storage overhead of the protocol smaller.
+}
+the circuit has 104,000 constraints and takes approximately \emph{11 seconds} to generate a proof on a T470s thinpad with an i7-7600U processor.
+
+\subsubsection*{Remainder of the Protocol}
+We use Node.js and Javascript to implement the remainder of the protocol.
+Specifically, we have seperate functionality to (1) run a server to coordinate MPC setup (2) setup each party (3) generatea proof and data share for each party at time step $t$ (4) aggregate the data shares and verify the proofs.
+Throughout the implementation, we also use a simple JSON-based database to store the secret keys, commitments, and data.
+
