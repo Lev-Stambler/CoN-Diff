@@ -57,10 +57,8 @@ async function performAggregation(vectorSecret, jiffClient)  {
 
 	// Participate in MPC computation
 	vectorSecret = [vectorSecret[0], vectorSecret[1]]
-	console.log("AAA", vectorSecret);
 	const shares = await jiffClient.share_array(vectorSecret, null, null, null, null, null, "SHAR");
 	const vectorLength = vectorSecret.length;
-	console.log("Shares", shares);
 
 	// Aggregate each component of the vector securely
 	const sumPromises = [];
@@ -69,7 +67,6 @@ async function performAggregation(vectorSecret, jiffClient)  {
 		for (let j = 2; j <= config.N_PARTIES; j++) {
 			sum = sum.sadd(shares[j][i]); // Dynamically sum all shares for this index
 		}
-		console.log("Sum", sum);
 		sumPromises.push(sum);
 	}
 	const result = await Promise.all(sumPromises.map(async p => {

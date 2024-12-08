@@ -71,13 +71,11 @@ const aggregate = async (n_parties, prf_input) => {
 		}
 		return a % config.FIELD_SIZE
 	})
-	console.log("Aggregated output", agg_output)
 
 	const agg_sk = config.deserializeBigInt(fs.readFileSync(config.AGG_SK_FILE_PATH, "utf-8"))
 	const multed  = matrixVectorMultiply(mat, agg_sk, config.FIELD_SIZE)
 	const ret = agg_output.map((_, i) => ((agg_output[i] - multed[i]) % config.FIELD_SIZE) - BigInt(config.SCALE_OFFSET_FACTOR))
 	console.log("Final output", ret)
-	console.log("Agg sk", agg_sk)
 	return ret
 }
 
