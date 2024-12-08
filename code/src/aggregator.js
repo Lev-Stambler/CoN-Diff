@@ -40,7 +40,6 @@ const genPubMatrix = async (N, M, prf_inp) => {
 
 
 const perPartyVer = async (matrix, party_id) => {
-	console.log("Verifying party", party_id, "with mat")
 	const output = JSON.parse(
 		fs.readFileSync(config.outputFilePath(party_id), "utf-8")
 	);
@@ -51,7 +50,6 @@ const perPartyVer = async (matrix, party_id) => {
 	const res = await snarkjs.groth16.verify(vKey, 
 		pubSigs
 		, proof);
-	console.log("Party", party_id, res)
 	return [res, output]
 }
 
@@ -77,12 +75,14 @@ const aggregate = async (n_parties, prf_input) => {
 
 	const agg_sk = config.deserializeBigInt(fs.readFileSync(config.AGG_SK_FILE_PATH, "utf-8"))
 	const multed  = matrixVectorMultiply(mat, agg_sk, config.FIELD_SIZE)
-	const ret = agg_output.map((_, i) => agg_output[i] - multed[i])
+	const ret = agg_output.map((_, i) => ((agg_output[i] - multed[i]) % config.FIELD_SIZE) - BigInt(config.SCALE_OFFSET_FACTOR))
 	console.log("Final output", ret)
+	console.log("Agg sk", agg_sk)
 	return ret
 }
 
 aggregate(
 	3,
 	1n
-).then(console.log)
+)
+
