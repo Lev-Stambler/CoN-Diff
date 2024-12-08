@@ -171,3 +171,5 @@ const main = async () => {
 }
 
 main().catch(console.error);
+
+module.exports = { do_proof, genPubMatrix, proveStep, lazyLoad, matrixVectorMultiply, generateDummyDataWithNodeCrypto, generateWithNodeCrypto, genSK };
