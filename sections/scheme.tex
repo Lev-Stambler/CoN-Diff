@@ -144,3 +144,9 @@ We use Node.js and Javascript to implement the remainder of the protocol.
 Specifically, we have seperate functionality to (1) run a server to coordinate MPC setup (2) setup each party (3) generatea proof and data share for each party at time step $t$ (4) aggregate the data shares and verify the proofs.
 Throughout the implementation, we also use a simple JSON-based database to store the secret keys, commitments, and data.
 
+\section{Future Work}
+Besides practical optimizations to the protocol, there are several directions for future work.
+Specifically, our work does not have any interesting liveness guarantees.
+If one party aborts, the protocol cannot complete!
+So, we would hope to use \emph{correlated pseudo-random functions} as seen in Ref.~\cite{boyle2020correlated} to create a sort of $k$-wise secrecey mask: as long as $k$ out of $n$ parties reveal there shares, the protocol can complete and recover the sum of the data for those $k$ parties.
+
