@@ -1,21 +1,57 @@
 const config = require('./config');
 const snarkjs = require("snarkjs");
 const fs = require("fs");
-const { genPubMatrix, matrixVectorMultiply } = require('./prover');
+const buildMimcSponge = require("circomlibjs").buildMimcSponge;
+
+// Function to multiply a matrix by a vector over a BigInt modulus Fp
+function matrixVectorMultiply(matrix, vector, Fp) {
+  const result = new Array(matrix.length).fill(0n);
+
+  for (let i = 0; i < matrix.length; i++) {
+    let sum = BigInt(0);
+    for (let j = 0; j < vector.length; j++) {
+      sum = (sum + BigInt(matrix[i][j]) * BigInt(vector[j])) % Fp;
+    }
+    result[i] = sum;
+  }
+
+  return result;
+}
+
+
+
+const genPubMatrix = async (N, M, prf_inp) => {
+	const mimcSponge = await buildMimcSponge();
+	const F = mimcSponge.F;
+
+	const out = mimcSponge.multiHash([prf_inp, 0], 0, N * M)
+	const outsSerial = out.map(o => F.toObject(o))
+
+	let matrix = [];
+	for (let i = 0; i < N; i++) {
+		let row = [];
+		for (let j = 0; j < M; j++) {
+			row.push(outsSerial[i * M + j])
+		}
+		matrix.push(row)
+	}
+	return matrix
+}
 
 
 const perPartyVer = async (matrix, party_id) => {
-	const output = config.deserializeBigInt(
+	console.log("Verifying party", party_id, "with mat")
+	const output = JSON.parse(
 		fs.readFileSync(config.outputFilePath(party_id), "utf-8")
 	);
+
+	const pubSigs = JSON.parse(fs.readFileSync(config.pubSigFilePath(party_id), "utf-8"))
 	const proof = JSON.parse(fs.readFileSync(config.proofFilePath(party_id), "utf-8"))
-	const pubSig = config.deserializeBigInt(fs.readFileSync(config.pubSigFilePath(party_id), "utf-8"))
-	const res = await snarkjs.groth16.verify(vKey, {
-		matrix,
-		output,
-		comm: pubSig,
-	}, proof);
-	console.log("Party i", res)
+	const vKey = JSON.parse(fs.readFileSync("circuits/ver_key.json"), "utf-8");
+	const res = await snarkjs.groth16.verify(vKey, 
+		pubSigs
+		, proof);
+	console.log("Party", party_id, res)
 	return res, output;
 }
 

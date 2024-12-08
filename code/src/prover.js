@@ -90,6 +90,7 @@ const do_proof = async (matrix, sk_comm, sk, sk_rand, error, data, partyId, skip
 
 	if (!skip_proof_gen) {
 		const { proof, publicSignals }  = await snarkjs.groth16.fullProve( {matrix, outputs, comm: sk_comm, sk, sk_rand, error, data}, "circuits/LweVer_js/LweVer.wasm", "circuits/LweVer.zkey");
+		console.log("Public Signals Generated", publicSignals);
 		fs.writeFileSync(config.proofFilePath(partyId), JSON.stringify(proof));
 		fs.writeFileSync(config.pubSigFilePath(partyId), JSON.stringify(publicSignals));
 		console.log("Proof generated and now verifying...");
