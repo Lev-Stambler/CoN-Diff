@@ -24,38 +24,38 @@ We sketch the protocol in \cref{fig:protSimp}.
 \sam{Might need to make the standard deviation larger $O(1/\sqrt{n})$ to make it work as per Prop. 3.1. Should it also
 depend on the number of honest parties???}
 
-\subsubsection*{Correctness}
-\lev{TODO: mostly straightforward, but need to be careful due to wrap around}
+% \subsubsection*{Correctness}
+% \lev{TODO: mostly straightforward, but need to be careful due to wrap around}
 
-\subsubsection*{Soundness and Privacy}
+% \subsubsection*{Soundness and Privacy}
 
-Before proving privacy, we have to recall a theorem about discrete Gaussian noise.
-
-
-\begin{proposition}[Sum of Discrete Gaussians, \cite{kairouz2021distributed}]
-	\label{prop:disc}
-	Let $\sigma \geq \frac{1}{2}$.
-	Let $X_{i,j} \sim \mathcal{N}_\mathbb{Z}(0, \sigma^2)$ independently for each $i$ and $j$.
-	Let $X_i = (X_{i,1}, \dots, X_{i,d}) \in \mathbb{Z}^d$.
-	Let $Z_m = \sum_{i=1}^m X_i \in \mathbb{Z}^d$. Then, for all $\Delta \in \mathbb{Z}^d$ and all $a \in [1, \infty)$,
-	\[
-		D_a(Z_m \parallel Z_m + \Delta) \leq \frac{a \|\Delta\|_2^2}{2m\sigma^2} + \tau_{m,\sigma} d,
-	\]
-	where $\tau_{m,\sigma} := 10 \cdot \sum_{k=1}^{m-1} e^{-2\pi^2\sigma^2k/(k+1)}$.
-\end{proposition}
+% Before proving privacy, we have to recall a theorem about discrete Gaussian noise.
 
 
-\begin{theorem}[Preservation of Differential Privacy]
-	Let $v^\ast \coloneqq \max_{i \in[n]} \|\vec{v}_i\|_2^2$.
-	Suppose there are at least $m = \theta n$ honest parties where $\theta = \frac{a v^\ast}{2\sigma^2 \epsilon}$ for some $\epsilon > 0$ and $a > 1$.
-	Assuming that the HPRF is secure and the usage of the fixed-point representation trick in Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}, the protocol outlined in \cref{fig:protSimp} is $(a, \epsilon)$-RDP.
-	% \lev{TODO: exact parameters!}
-	\sam{The exact parameters provided assumes that $\tau d$ from Prop. 3.1 is vanishingly small. In Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}, they make the same assumption because of the fixed-point representation of the noisy gradients which they used.}
-\end{theorem}
-\begin{proof}[Proof Sketch]
-	By \cref{prop:disc}, we have that as long as long as $\theta n$ parties are not malicious and add discrete Gaussian noise honestly, the sum of the noisey shares satisfies Renyi differential privacy.
-	Then, by the data processing inequality, any function of the sum of the honest shares also satisfies Renyi differential privacy.
-\end{proof}
+% \begin{proposition}[Sum of Discrete Gaussians, \cite{kairouz2021distributed}]
+% 	\label{prop:disc}
+% 	Let $\sigma \geq \frac{1}{2}$.
+% 	Let $X_{i,j} \sim \mathcal{N}_\mathbb{Z}(0, \sigma^2)$ independently for each $i$ and $j$.
+% 	Let $X_i = (X_{i,1}, \dots, X_{i,d}) \in \mathbb{Z}^d$.
+% 	Let $Z_m = \sum_{i=1}^m X_i \in \mathbb{Z}^d$. Then, for all $\Delta \in \mathbb{Z}^d$ and all $a \in [1, \infty)$,
+% 	\[
+% 		D_a(Z_m \parallel Z_m + \Delta) \leq \frac{a \|\Delta\|_2^2}{2m\sigma^2} + \tau_{m,\sigma} d,
+% 	\]
+% 	where $\tau_{m,\sigma} := 10 \cdot \sum_{k=1}^{m-1} e^{-2\pi^2\sigma^2k/(k+1)}$.
+% \end{proposition}
+
+
+% \begin{theorem}[Preservation of Differential Privacy]
+% 	Let $v^\ast \coloneqq \max_{i \in[n]} \|\vec{v}_i\|_2^2$.
+% 	Suppose there are at least $m = \theta n$ honest parties where $\theta = \frac{a v^\ast}{2\sigma^2 \epsilon}$ for some $\epsilon > 0$ and $a > 1$.
+% 	Assuming that the HPRF is secure and the usage of the fixed-point representation trick in Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}, the protocol outlined in \cref{fig:protSimp} is $(a, \epsilon)$-RDP.
+% 	% \lev{TODO: exact parameters!}
+% 	\sam{The exact parameters provided assumes that $\tau d$ from Prop. 3.1 is vanishingly small. In Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}, they make the same assumption because of the fixed-point representation of the noisy gradients which they used.}
+% \end{theorem}
+% \begin{proof}[Proof Sketch]
+% 	By \cref{prop:disc}, we have that as long as long as $\theta n$ parties are not malicious and add discrete Gaussian noise honestly, the sum of the noisey shares satisfies Renyi differential privacy.
+% 	Then, by the data processing inequality, any function of the sum of the honest shares also satisfies Renyi differential privacy.
+% \end{proof}
 
 \begin{theorem}[Liveness]
 	The protocol offers no liveness guarantees: any $1$ party can prevent the protocol from completing.
