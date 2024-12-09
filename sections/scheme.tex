@@ -14,15 +14,15 @@ We sketch the protocol in \cref{fig:protSimp}.
 		\end{itemize}
 		Aggregation for time step $t$: \begin{itemize}
 			\item Each party $i$ calls $\vec{r}_i = F(s_i, t)$  where $F$ is the HPRF.
-			\item Each party generates noise $\vec{x}_i$ with standard deviation $O(1/n)$ and publishes data $\overrightarrow{ct}_i = \vec{v}_i + \vec{r}_i + \vec{x}_i$ 
+			\item Each party generates noise $\vec{x}_i$ with standard deviation $O(1/\sqrt{n})$ and publishes data $\overrightarrow{ct}_i = \vec{v}_i + \vec{r}_i + \vec{x}_i$ 
 			\item To decode the data, a third party does $\sum_i \overrightarrow{ct}_i - F(\summedSK, t) = \sum_i \vec{v}_i + \sum_i \vec{x}_i$
 		\end{itemize}
 	\end{mdframed}
 	\caption{Outline of the protocol without any verifiability}
 	\label{fig:protSimp}
 \end{figure}
-\sam{Might need to make the standard deviation larger $O(1/\sqrt{n})$ to make it work as per Prop. 3.1. Should it also
-depend on the number of honest parties???}
+% \sam{Might need to make the standard deviation larger $O(1/\sqrt{n})$ to make it work as per Prop. 3.1. Should it also
+% depend on the number of honest parties???}
 
 % \subsubsection*{Correctness}
 % \lev{TODO: mostly straightforward, but need to be careful due to wrap around}
@@ -84,7 +84,7 @@ We sketch the protocol in \cref{fig:prot}.
 		\end{itemize}
 		Aggregation for time step $t$: \begin{itemize}
 			\item Each party $i$ calls $b_i = F(s_i, t)$  where $F$ is the HPRF
-			\item Each party generates (quantized) Gaussian noise $\eta_i \in \Z^n$ with standard deviation $O(1/n)$.
+			\item Each party generates (quantized) Gaussian noise $\eta_i \in \Z^n$ with standard deviation $O(1/\sqrt{n})$.
 			\item  For data $v_i$ and $PRF$ output $b_i$,
 				each party publishes data $ct_i = \lfloor Q \cdot (v_i + b_i) \rfloor  + \eta_i$ for quantization/ offset parameter $Q$.
 			\item Each party publishes a proof that (1) $b_i$ is generated with key $s_i$ relative to $Comm(s_i)$, (2) $b_i = F(s_i, t)$, and (3) $v_i + \eta_i$ are within some bounds specified by the protocol
@@ -120,7 +120,7 @@ Unfortunately, Jiff requires a coordinating server to run the MPC protocol which
 We note though that setup only needs to be run once and the server can be run by a trusted third party.
 
 \subsubsection*{Proofs}
-We use Circom and SnarkJS with Groth16 \lev{TODO cite} to generate the zk-SNARKs.
+We use Circom and SnarkJS with Groth16 \cite{groth2016size} to generate the zk-SNARKs.
 
 Specifically, we have the following optimizations:
 \begin{itemize}

@@ -100,41 +100,41 @@ Such HPRFs are also referred to as \emph{key-homomorphic PRFs} and were original
 	\end{definition}
 
 Boneh \emph{et al.} provided the first construction of an (almost) key-homomorphic PRF without random oracles by basing their construction on the LWE problem.
-By using ideas from LWE-based PRFs constructed by Banerjee, Peikert, and Rosen in Ref.~\cite{banerjee2012pseudorandom} and the reduction from LWE to LWR shown in Proposition~\ref{prop:lwe2lwr}, Boneh \emph{et al.} constructed an (almost) key-homomorphic PRF that has a parameter $\gamma$ that corresponds to the error allowed in the homomorphism.
+% By using ideas from LWE-based PRFs constructed by Banerjee, Peikert, and Rosen in Ref.~\cite{banerjee2012pseudorandom} and the reduction from LWE to LWR shown in Proposition~\ref{prop:lwe2lwr}, Boneh \emph{et al.} constructed an (almost) key-homomorphic PRF that has a parameter $\gamma$ that corresponds to the error allowed in the homomorphism.
 
-\begin{definition}[$\zeta$-Almost Key-Homomorphic PRFs~\cite{boneh2013key}]\label{def:akhprf}
-	Let $F:\calK \times \calX \to \Z_p^m$ be an efficiently computable function such that $(\calK, \oplus)$ is a group.
-	We say that the tuple $(F, \oplus)$ is a $\zeta$-almost key-homomorphic PRF ($\gamma$-AKHPRF) if the following two properties hold:
-	\begin{enumerate}
-		\item $F$ is a secure pseudorandom function.
-		\item For every $k_1, k_2 \in \calK$ and every $x \in \calX$, there exists a vector $\vec{e} \in [0, \zeta]^{m}$ such that 
-		\[F\left(k_1, x\right) + F\left(k_2, x\right) = F\left(k_1 \oplus k_2, x\right) + \vec{e} \bmod p.\]
-	\end{enumerate}
-\end{definition}
+% \begin{definition}[$\zeta$-Almost Key-Homomorphic PRFs~\cite{boneh2013key}]\label{def:akhprf}
+% 	Let $F:\calK \times \calX \to \Z_p^m$ be an efficiently computable function such that $(\calK, \oplus)$ is a group.
+% 	We say that the tuple $(F, \oplus)$ is a $\zeta$-almost key-homomorphic PRF ($\gamma$-AKHPRF) if the following two properties hold:
+% 	\begin{enumerate}
+% 		\item $F$ is a secure pseudorandom function.
+% 		\item For every $k_1, k_2 \in \calK$ and every $x \in \calX$, there exists a vector $\vec{e} \in [0, \zeta]^{m}$ such that 
+% 		\[F\left(k_1, x\right) + F\left(k_2, x\right) = F\left(k_1 \oplus k_2, x\right) + \vec{e} \bmod p.\]
+% 	\end{enumerate}
+% \end{definition}
 
-Crucially, the construction by Boneh \emph{et al.} uses \emph{seed homomorphic psudorandom generators} (PRGs) to generate the keys for the homomorphic PRFs.
+% Crucially, the construction by Boneh \emph{et al.} uses \emph{seed homomorphic psudorandom generators} (PRGs) to generate the keys for the homomorphic PRFs.
 
-\begin{definition}[Seed Homomorphic PRGs~\cite{boneh2013key}]
-	An efficiently computable function $G: \calX \to \calY$, where $(\calX, \oplus)$ and $(\calY, \otimes)$ are groups, is said to be \emph{seed homomorphic} if the following two properties hold:
-	\begin{enumerate}
-		\item $G$ is a secure PRG.
-		\item For ever $s_1, s_2 \in \calX$, we have that $G\left(s_1\right) \otimes G\left(s_2\right) = G\left(s_1 \oplus s_2\right)$.
-	\end{enumerate}
-\end{definition}
+% \begin{definition}[Seed Homomorphic PRGs~\cite{boneh2013key}]
+% 	An efficiently computable function $G: \calX \to \calY$, where $(\calX, \oplus)$ and $(\calY, \otimes)$ are groups, is said to be \emph{seed homomorphic} if the following two properties hold:
+% 	\begin{enumerate}
+% 		\item $G$ is a secure PRG.
+% 		\item For ever $s_1, s_2 \in \calX$, we have that $G\left(s_1\right) \otimes G\left(s_2\right) = G\left(s_1 \oplus s_2\right)$.
+% 	\end{enumerate}
+% \end{definition}
 
-Similar to the notion of approximate key-homomorphism that has been stated for the PRFs in Definition~\ref{def:akhprf}, we can define a notion of approximate seed-homomorphism for the PRGs by assuming the LWR problem is hard and allowing
-\[G_{LWR}\left(s_1 + s_2\right) = G_{LWR}\left(s_1\right) + G_{LWR}\left(s_2\right) + \vec{e}\]
-where $\vec{e} \in \{0, 1, 2\}^m$ is a small error vector.
+% Similar to the notion of approximate key-homomorphism that has been stated for the PRFs in Definition~\ref{def:akhprf}, we can define a notion of approximate seed-homomorphism for the PRGs by assuming the LWR problem is hard and allowing
+% \[G_{LWR}\left(s_1 + s_2\right) = G_{LWR}\left(s_1\right) + G_{LWR}\left(s_2\right) + \vec{e}\]
+% where $\vec{e} \in \{0, 1, 2\}^m$ is a small error vector.
 
-Without going into the details for how we can construct a $\zeta$-AKHPRF from a $\zeta'$-ASHPRG, we provide some intuition for how a KHPRF can be constructed from a seed-homomorphic PRG as stated in Ref.~\cite{boneh2013key}.
-We start off by considering a seed-homomorphic PRG $G: \calK \to \calK \times \calK$ where $(\calK, \oplus)$ is a group.
-Since the output of $G(s)$ is in $\calK \times \calK$, we can write $G_0(s)$ for the left half of $G(s)$ and $G_1(s)$ for the other half. 
-Now, we can construct the KHPRF $F$ with key space $\calK$ and input space $\{0, 1\}^\ell$ as follows:
-\[F(k, x=x_1, \ldots, x_\ell) = G_{x_\ell}\left(G_{x_{\ell - 1}}\left(\ldots G_{x_2}\left(G_{x_1}(k)\right)\ldots \right)\right).\]
-If $G$ is a secure PRG, then $F$ is a secure PRF.
-Moreover, it can be easily checked that if $G$ is seed-homomorphic, then $F$ is a KHPRF.
+% Without going into the details for how we can construct a $\zeta$-AKHPRF from a $\zeta'$-ASHPRG, we provide some intuition for how a KHPRF can be constructed from a seed-homomorphic PRG as stated in Ref.~\cite{boneh2013key}.
+% We start off by considering a seed-homomorphic PRG $G: \calK \to \calK \times \calK$ where $(\calK, \oplus)$ is a group.
+% Since the output of $G(s)$ is in $\calK \times \calK$, we can write $G_0(s)$ for the left half of $G(s)$ and $G_1(s)$ for the other half. 
+% Now, we can construct the KHPRF $F$ with key space $\calK$ and input space $\{0, 1\}^\ell$ as follows:
+% \[F(k, x=x_1, \ldots, x_\ell) = G_{x_\ell}\left(G_{x_{\ell - 1}}\left(\ldots G_{x_2}\left(G_{x_1}(k)\right)\ldots \right)\right).\]
+% If $G$ is a secure PRG, then $F$ is a secure PRF.
+% Moreover, it can be easily checked that if $G$ is seed-homomorphic, then $F$ is a KHPRF.
 
-Since then, the construction by Boneh \emph{et al.} has been generalized and made more efficient in Refs.~\cite{newKeyHom, kim2020key}.
+% Since then, the construction by Boneh \emph{et al.} has been generalized and made more efficient in Refs.~\cite{newKeyHom, kim2020key}.
 
 \subsection{Federated Learning}
 \emph{Federated learning} (FL) was first proposed by Google in 2017~\cite{mcmahan2017communication}.
