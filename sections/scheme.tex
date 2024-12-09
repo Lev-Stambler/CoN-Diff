@@ -114,7 +114,7 @@ Specifically, we will use the following construction for $F(s, t)$:
 To compute the aggregated secret key, we can use a simple MPC protocol.
 Specifically, we use Jiff, an MPC Javascript native library, to compute the sum of the secret keys.
 To improve efficiency, we use \emph{binary secrets} for the key of the homomorphic PRF.
-As pointed out by \lev{TODO cite}, binary-key learning with errors (resp. binary-key learning with rounding) is secure against PPT adversaries if the underlying LWE (resp. LWR) assumption holds.
+As pointed out by Ref.~\cite{micciancio2018hardness}, binary-key learning with errors (resp. binary-key learning with rounding) is secure against PPT adversaries if the underlying LWE (resp. LWR) assumption holds.
 Otherwise, we use the simple ``sadd'' functionality in Jiff to compute the sum of the secret keys.
 Unfortunately, Jiff requires a coordinating server to run the MPC protocol which adds a single point of failure to the setup protocol.
 We note though that setup only needs to be run once and the server can be run by a trusted third party.
