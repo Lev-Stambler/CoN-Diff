@@ -89,7 +89,7 @@ Given suitable parameters, it has been shown that the following distributions ar
 LWR is particularly useful for constructing efficient and secure cryptographic primitives, such as \emph{homomorphic pseudo-random functions} (HPRFs)~\cite{boneh2013key}.
 In this paper, we focus on HPRFs that are homomorphic over their keys under the addition operation.
 Such HPRFs are also referred to as \emph{key-homomorphic PRFs} and were originally introduced by Naor, Pinkas, and Reingold in Ref.~\cite{naor1999distributed} where these PRFs were constructed using random oracles and the Decisional Diffie-Hellman hardness assumption.
-
+\newpage
 \begin{definition}[Key-Homomorphic PRFs~\cite{boneh2013key}]
 	Consider an efficiently computable function $F: \calK \times \calX \to \calY$ such that $(\calK, \oplus)$ and $(\calY, \otimes)$ are both groups.
 	We say that the tuple $(F, \oplus, \otimes)$ is a \emph{key-homomorphic} PRF (KHPRF) if the following two properties hold:
@@ -178,49 +178,49 @@ In our work, we use the $(\eps, \delta)$-differential privacy definition, though
 % \lev{Make sure $(\eps, \delta)$-definition is removed elsewhere as well.}
 % \sam{do we have to remove it from the earlier definitions? I don't think it's too confusing since the $\epsilon$ and $\delta$ are defined with respect to different things and they are fairly self-contained.}
 
-\begin{definition}[R\'enyi Divergence, \cite{mironov2017renyi}]
-	For two probability distributions \( P \) and \( Q \) defined over \( R \), the Rényi divergence of order \( a > 1 \) is defined as:
-	\[
-		D_a(P \| Q) =
-		\frac{1}{a - 1} \log \mathbb{E}_{x \sim Q} 
-		\left[ 
-			\left( 
-				\frac{P(x)}{Q(x)} 
-			\right)^{a} 
-		\right],
-	\]
-	where \( P(x) \) is the density of \( P \) at \( x \), and all logarithms are natural.
+% \begin{definition}[R\'enyi Divergence, \cite{mironov2017renyi}]
+% 	For two probability distributions \( P \) and \( Q \) defined over \( R \), the Rényi divergence of order \( a > 1 \) is defined as:
+% 	\[
+% 		D_a(P \| Q) =
+% 		\frac{1}{a - 1} \log \mathbb{E}_{x \sim Q} 
+% 		\left[ 
+% 			\left( 
+% 				\frac{P(x)}{Q(x)} 
+% 			\right)^{a} 
+% 		\right],
+% 	\]
+% 	where \( P(x) \) is the density of \( P \) at \( x \), and all logarithms are natural.
 
-	For the endpoints of the interval \( (1, \infty) \), the Rényi divergence is defined by continuity:
-	\[
-		D_1(P \| Q) = \lim_{a \to 1} D_a(P \| Q),
-	\]
-	which can be verified to be the Kullback-Leibler divergence:
-	\[
-		D_1(P \| Q) = \mathbb{E}_{x \sim P} \left[ \log \frac{P(x)}{Q(x)} \right].
-	\]
-	Similarly,
-	\[
-		D_\infty(P \| Q) = \sup_{x \in \text{supp } Q} \log \frac{P(x)}{Q(x)}.
-	\]
-\end{definition}
+% 	For the endpoints of the interval \( (1, \infty) \), the Rényi divergence is defined by continuity:
+% 	\[
+% 		D_1(P \| Q) = \lim_{a \to 1} D_a(P \| Q),
+% 	\]
+% 	which can be verified to be the Kullback-Leibler divergence:
+% 	\[
+% 		D_1(P \| Q) = \mathbb{E}_{x \sim P} \left[ \log \frac{P(x)}{Q(x)} \right].
+% 	\]
+% 	Similarly,
+% 	\[
+% 		D_\infty(P \| Q) = \sup_{x \in \text{supp } Q} \log \frac{P(x)}{Q(x)}.
+% 	\]
+% \end{definition}
 
-As pointed out in Ref.~\cite{mironov2017renyi},
-\[
-	D_\infty(f(P) \| f(P')) \leq \eps
-\]
-for two adjacent inputs $P, P'$ if and only if $f$ satisfies $(\eps, 0)$-differential privacy.
-% \lev{TODO: check on the delta}.
-In fact, we can relax the definition of differential privacy to the following:
-\begin{definition}[$(a, \epsilon)-$R\'enyi Differential Privacy, \cite{mironov2017renyi}]
-	Let $a > 1$ and $\epsilon > 0$.
-	A randomized mechanism $f$ satisfies $(a, \epsilon)$-R\'enyi differential privacy ($(a, \epsilon)$-RDP) if for all pairs of adjacent inputs $P$ and $P'$, we have
-	\[
-		D_a\left(f(P) \parallel f(P')\right) \leq \epsilon.
-	\]	
-\end{definition}
+% As pointed out in Ref.~\cite{mironov2017renyi},
+% \[
+% 	D_\infty(f(P) \| f(P')) \leq \eps
+% \]
+% for two adjacent inputs $P, P'$ if and only if $f$ satisfies $(\eps, 0)$-differential privacy.
+% % \lev{TODO: check on the delta}.
+% In fact, we can relax the definition of differential privacy to the following:
+% \begin{definition}[$(a, \epsilon)-$R\'enyi Differential Privacy, \cite{mironov2017renyi}]
+% 	Let $a > 1$ and $\epsilon > 0$.
+% 	A randomized mechanism $f$ satisfies $(a, \epsilon)$-R\'enyi differential privacy ($(a, \epsilon)$-RDP) if for all pairs of adjacent inputs $P$ and $P'$, we have
+% 	\[
+% 		D_a\left(f(P) \parallel f(P')\right) \leq \epsilon.
+% 	\]	
+% \end{definition}
 
-So, similar to Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}, we will work with the $(a, \epsilon)$-Rényi divergence in our proofs.
+% So, similar to Ref.~\cite{stevens2021efficientdifferentiallyprivatesecure}, we will work with the $(a, \epsilon)$-Rényi divergence in our proofs.
 
 % \lev{TODO: remove local diff privacy or keep it?}
 
